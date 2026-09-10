@@ -190,6 +190,32 @@ const id: Record<string, string> = {
   "settings.reminderTime": "Jam Reminder",
   "settings.reminderNote":
     "Catatan: reminder terjadwal butuh Cloud Function yang jalan di Firebase project kamu (plan Blaze). Lihat README buat cara deploy-nya.",
+
+  // Gamification
+  "game.level": "Level {level}",
+  "game.dailyProgress": "{xp} / {goal} XP hari ini",
+  "game.toNextLevel": "{into} / {needed} XP ke level berikutnya",
+  "game.xpGained": "+{xp} XP",
+  "game.goalReached": "+{xp} XP — target harian tercapai! 🎯",
+  "game.levelUp": "Naik ke Level {level}!",
+  "game.levelUpHint": "Terus jalan, jangan putus streak-nya.",
+  "game.badgeUnlocked": "Lencana Baru!",
+  "game.nice": "Mantap",
+  "game.achievements": "Pencapaian",
+  "game.dailyGoal": "Target Harian",
+  "game.dailyGoalHint": "Berapa XP yang mau kamu kumpulkan tiap hari.",
+  "game.xpPerDay": "{xp} XP/hari",
+  "badge.first_step": "Langkah Pertama",
+  "badge.level_5": "Level 5",
+  "badge.level_10": "Level 10",
+  "badge.streak_7": "Streak 7 Hari",
+  "badge.streak_30": "Streak 30 Hari",
+  "badge.money_10": "10 Transaksi",
+  "badge.money_100": "100 Transaksi",
+  "badge.task_25": "25 Task Kelar",
+  "badge.habit_50": "50 Habit Dicentang",
+  "badge.journal_10": "10 Tulisan",
+  "badge.post_20": "20 Konten Tayang",
 };
 
 const en: Record<string, string> = {
@@ -377,6 +403,32 @@ const en: Record<string, string> = {
   "settings.reminderTime": "Reminder Time",
   "settings.reminderNote":
     "Note: scheduled reminders need the Cloud Function running in your Firebase project (Blaze plan). See the README for deploy steps.",
+
+  // Gamification
+  "game.level": "Level {level}",
+  "game.dailyProgress": "{xp} / {goal} XP today",
+  "game.toNextLevel": "{into} / {needed} XP to next level",
+  "game.xpGained": "+{xp} XP",
+  "game.goalReached": "+{xp} XP — daily goal reached! 🎯",
+  "game.levelUp": "Level {level} reached!",
+  "game.levelUpHint": "Keep going, don't break the streak.",
+  "game.badgeUnlocked": "New Badge!",
+  "game.nice": "Nice",
+  "game.achievements": "Achievements",
+  "game.dailyGoal": "Daily Goal",
+  "game.dailyGoalHint": "How much XP you want to earn each day.",
+  "game.xpPerDay": "{xp} XP/day",
+  "badge.first_step": "First Step",
+  "badge.level_5": "Level 5",
+  "badge.level_10": "Level 10",
+  "badge.streak_7": "7-Day Streak",
+  "badge.streak_30": "30-Day Streak",
+  "badge.money_10": "10 Transactions",
+  "badge.money_100": "100 Transactions",
+  "badge.task_25": "25 Tasks Done",
+  "badge.habit_50": "50 Habits Checked",
+  "badge.journal_10": "10 Entries",
+  "badge.post_20": "20 Posts Published",
 };
 
 export const translations: Record<Lang, Record<string, string>> = { id, en };

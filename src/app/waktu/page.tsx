@@ -12,6 +12,8 @@ import TaskSummaryCard from "./components/TaskSummaryCard";
 import TaskCard from "./components/TaskCard";
 import TaskForm from "./components/TaskForm";
 import { useT } from "@/lib/i18n";
+import { awardXp } from "@/lib/gamification";
+import { celebrate } from "@/lib/celebrate";
 
 export default function WaktuPage() {
   return (
@@ -79,6 +81,7 @@ function WaktuContent() {
   async function handleCycleStatus(id: string, status: TaskStatus) {
     if (!user) return;
     await updateTaskStatus(user.uid, id, status);
+    if (status === "done") celebrate(await awardXp(user.uid, "task"));
   }
 
   async function handleDelete(id: string) {

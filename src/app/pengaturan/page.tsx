@@ -13,6 +13,8 @@ import {
 import Switch from "./components/Switch";
 import { setLanguage, useLanguage, useT } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/translations";
+import { setDailyGoal, subscribeStats } from "@/lib/gamification";
+import { DAILY_GOAL_OPTIONS, EMPTY_STATS, type GameStats } from "@/types/gamification";
 
 export default function PengaturanPage() {
   return (
@@ -34,12 +36,18 @@ function PengaturanContent() {
   const [permission, setPermission] = useState<NotificationPermission>(() =>
     typeof window !== "undefined" && "Notification" in window ? Notification.permission : "default"
   );
+  const [gameStats, setGameStats] = useState<GameStats>(EMPTY_STATS);
   const [enabling, setEnabling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
-    return subscribeNotificationSettings(user.uid, setSettings);
+    const unsubSettings = subscribeNotificationSettings(user.uid, setSettings);
+    const unsubStats = subscribeStats(user.uid, setGameStats);
+    return () => {
+      unsubSettings();
+      unsubStats();
+    };
   }, [user]);
 
   async function handleEnable() {
@@ -88,6 +96,24 @@ function PengaturanContent() {
                 }`}
               >
                 {l.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border/60">
+          <h2 className="text-sm font-bold text-ink">{t("game.dailyGoal")}</h2>
+          <p className="mt-1 text-xs text-ink-muted">{t("game.dailyGoalHint")}</p>
+          <div className="mt-3 flex gap-2">
+            {DAILY_GOAL_OPTIONS.map((goal) => (
+              <button
+                key={goal}
+                onClick={() => user && setDailyGoal(user.uid, goal)}
+                className={`flex-1 rounded-xl px-2 py-2.5 text-xs font-semibold transition ${
+                  gameStats.dailyGoal === goal ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+                }`}
+              >
+                {t("game.xpPerDay", { xp: goal })}
               </button>
             ))}
           </div>

@@ -9,6 +9,8 @@ import type { JournalEntry, NewJournalEntry } from "@/types/journal";
 import JournalCard from "./components/JournalCard";
 import JournalEditor from "./components/JournalEditor";
 import { useT } from "@/lib/i18n";
+import { awardXp } from "@/lib/gamification";
+import { celebrate } from "@/lib/celebrate";
 
 export default function JurnalPage() {
   return (
@@ -51,6 +53,7 @@ function JurnalContent() {
       await updateEntry(user.uid, editingEntry.id, data);
     } else {
       await addEntry(user.uid, data);
+      celebrate(await awardXp(user.uid, "journal"));
     }
   }
 

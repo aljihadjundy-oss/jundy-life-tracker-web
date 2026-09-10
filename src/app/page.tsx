@@ -16,6 +16,10 @@ import type { ContentItem } from "@/types/branding";
 import type { Habit, HabitLog } from "@/types/kesehatan";
 import { formatCurrency, currentMonthKey, todayISO, addDaysISO } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import GameHeader from "@/components/GameHeader";
+import BadgeGrid from "@/components/BadgeGrid";
+import { subscribeStats } from "@/lib/gamification";
+import { EMPTY_STATS, type GameStats } from "@/types/gamification";
 
 const MODULES = [
   { href: "/keuangan", labelKey: "home.modules.finance", emoji: "💰", gradient: "from-emerald-400 to-teal-500" },
@@ -40,6 +44,7 @@ function DashboardContent() {
   const [content, setContent] = useState<ContentItem[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [habitLogs, setHabitLogs] = useState<HabitLog[]>([]);
+  const [gameStats, setGameStats] = useState<GameStats>(EMPTY_STATS);
 
   useEffect(() => {
     if (!user) return;
@@ -48,12 +53,14 @@ function DashboardContent() {
     const unsubContent = subscribeContent(user.uid, setContent);
     const unsubHabits = subscribeHabits(user.uid, setHabits);
     const unsubHabitLogs = subscribeHabitLogs(user.uid, setHabitLogs);
+    const unsubStats = subscribeStats(user.uid, setGameStats);
     return () => {
       unsubTx();
       unsubTasks();
       unsubContent();
       unsubHabits();
       unsubHabitLogs();
+      unsubStats();
     };
   }, [user]);
 
@@ -126,7 +133,11 @@ function DashboardContent() {
         extra={<SettingsLink />}
       />
 
-      <section className="mt-2 px-5">
+      <div className="mt-2">
+        <GameHeader stats={gameStats} />
+      </div>
+
+      <section className="mt-5 px-5">
         <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2">
           {MODULES.map((m) => (
             <Link key={m.href} href={m.href} className="flex flex-col items-center gap-1.5">
@@ -192,6 +203,7 @@ function DashboardContent() {
         </Link>
       </section>
 
+      <BadgeGrid stats={gameStats} />
     </>
   );
 }

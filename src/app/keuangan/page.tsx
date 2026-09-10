@@ -18,6 +18,8 @@ import TransactionForm from "./components/TransactionForm";
 import BudgetSheet from "./components/BudgetSheet";
 import BalanceCard from "./components/BalanceCard";
 import { useT } from "@/lib/i18n";
+import { awardXp } from "@/lib/gamification";
+import { celebrate } from "@/lib/celebrate";
 
 export default function KeuanganPage() {
   return (
@@ -65,6 +67,7 @@ function KeuanganContent() {
   async function handleAdd(data: NewTransaction) {
     if (!user) return;
     await addTransaction(user.uid, data);
+    celebrate(await awardXp(user.uid, "transaction"));
   }
 
   async function handleDelete(id: string) {

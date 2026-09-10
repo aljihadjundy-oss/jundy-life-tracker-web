@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import RegisterSW from "@/components/RegisterSW";
+import CelebrationLayer from "@/components/CelebrationLayer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -62,7 +63,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col overscroll-none">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <CelebrationLayer />
+        </AuthProvider>
         <RegisterSW />
       </body>
     </html>

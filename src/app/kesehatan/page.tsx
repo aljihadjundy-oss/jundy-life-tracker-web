@@ -22,6 +22,8 @@ import MetricsForm from "./components/MetricsForm";
 import HabitCard from "./components/HabitCard";
 import HabitForm from "./components/HabitForm";
 import { useT } from "@/lib/i18n";
+import { awardXp } from "@/lib/gamification";
+import { celebrate } from "@/lib/celebrate";
 
 export default function KesehatanPage() {
   return (
@@ -116,6 +118,7 @@ function KesehatanContent() {
   async function handleToggleHabit(habitId: string, next: boolean) {
     if (!user) return;
     await setHabitLog(user.uid, habitId, selectedDate, next);
+    if (next) celebrate(await awardXp(user.uid, "habit"));
   }
 
   async function handleSaveMetrics(data: DailyMetrics) {

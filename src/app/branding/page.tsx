@@ -12,6 +12,8 @@ import PlatformChips from "./components/PlatformChips";
 import ContentCard from "./components/ContentCard";
 import ContentForm from "./components/ContentForm";
 import { useT } from "@/lib/i18n";
+import { awardXp } from "@/lib/gamification";
+import { celebrate } from "@/lib/celebrate";
 
 export default function BrandingPage() {
   return (
@@ -79,6 +81,7 @@ function BrandingContent() {
   async function handleCycleStatus(id: string, status: ContentStatus) {
     if (!user) return;
     await updateContentStatus(user.uid, id, status);
+    if (status === "posted") celebrate(await awardXp(user.uid, "post"));
   }
 
   async function handleDelete(id: string) {
