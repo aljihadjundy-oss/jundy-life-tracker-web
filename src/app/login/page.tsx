@@ -3,10 +3,12 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
+import { useT } from "@/lib/i18n";
 
 export default function LoginPage() {
   const { user, loading, error, signInWithGoogle } = useAuth();
   const router = useRouter();
+  const t = useT();
 
   useEffect(() => {
     if (!loading && user) {
@@ -20,10 +22,8 @@ export default function LoginPage() {
         <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-start to-brand-end text-3xl font-bold text-white shadow-lg shadow-brand-start/30">
           JL
         </div>
-        <h1 className="text-2xl font-bold text-ink">Jundy Life Tracker</h1>
-        <p className="max-w-xs text-sm text-ink-muted">
-          Keuangan, waktu, branding, dan kesehatan — semua dalam satu tempat.
-        </p>
+        <h1 className="text-2xl font-bold text-ink">{t("app.name")}</h1>
+        <p className="max-w-xs text-sm text-ink-muted">{t("app.tagline")}</p>
       </div>
 
       <button
@@ -32,12 +32,12 @@ export default function LoginPage() {
         className="flex w-full max-w-xs items-center justify-center gap-3 rounded-2xl bg-ink px-6 py-4 text-base font-semibold text-surface shadow-md transition active:scale-95 disabled:opacity-50"
       >
         <GoogleIcon />
-        Masuk dengan Google
+        {t("app.signInGoogle")}
       </button>
 
       {error && (
         <p className="max-w-xs rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-500">
-          {error}
+          {t(error)}
         </p>
       )}
     </div>

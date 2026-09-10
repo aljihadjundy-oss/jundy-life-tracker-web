@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { JournalEntry } from "@/types/journal";
 import { formatDate } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 export default function JournalCard({
   entry,
@@ -14,6 +15,7 @@ export default function JournalCard({
   onDelete: (id: string) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const t = useT();
   const preview = entry.content.replace(/\s+/g, " ").trim().slice(0, 90);
 
   return (
@@ -26,7 +28,7 @@ export default function JournalCard({
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-ink">{entry.title || "Tanpa judul"}</p>
+            <p className="truncate text-sm font-semibold text-ink">{entry.title || t("journal.untitled")}</p>
             <p className="mt-0.5 text-xs text-ink-muted">{formatDate(entry.date)}</p>
             {preview && <p className="mt-1.5 line-clamp-2 text-xs text-ink-muted">{preview}</p>}
           </div>
@@ -37,10 +39,10 @@ export default function JournalCard({
         {confirming ? (
           <div className="flex gap-2">
             <button onClick={() => onDelete(entry.id)} className="text-[11px] font-semibold text-red-500">
-              Hapus
+              {t("app.delete")}
             </button>
             <button onClick={() => setConfirming(false)} className="text-[11px] font-medium text-ink-muted">
-              Batal
+              {t("app.cancel")}
             </button>
           </div>
         ) : (
@@ -48,7 +50,7 @@ export default function JournalCard({
             onClick={() => setConfirming(true)}
             className="text-[11px] font-medium text-ink-muted underline-offset-2 hover:underline"
           >
-            Hapus
+            {t("app.delete")}
           </button>
         )}
       </div>

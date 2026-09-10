@@ -11,6 +11,7 @@ import ConsistencyCard from "./components/ConsistencyCard";
 import PlatformChips from "./components/PlatformChips";
 import ContentCard from "./components/ContentCard";
 import ContentForm from "./components/ContentForm";
+import { useT } from "@/lib/i18n";
 
 export default function BrandingPage() {
   return (
@@ -22,6 +23,7 @@ export default function BrandingPage() {
 
 function BrandingContent() {
   const { user } = useAuth();
+  const t = useT();
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
@@ -86,17 +88,17 @@ function BrandingContent() {
 
   return (
     <>
-      <TopBar title="Branding" subtitle="Content calendar & reputasi" />
+      <TopBar title={t("branding.title")} subtitle={t("branding.subtitle")} />
 
       <ConsistencyCard streak={streak} postsThisWeek={postsThisWeek} last14Days={last14Days} />
 
       <div className="mt-5 flex items-center justify-between px-5">
-        <h2 className="text-sm font-bold text-ink">Content Calendar</h2>
+        <h2 className="text-sm font-bold text-ink">{t("branding.contentCalendar")}</h2>
         <button
           onClick={() => setShowForm(true)}
           className="flex items-center gap-1 rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
         >
-          + Tambah
+          {t("app.add")}
         </button>
       </div>
 
@@ -114,7 +116,9 @@ function BrandingContent() {
         {!loading && filteredContent.length === 0 && (
           <div className="rounded-2xl bg-surface-raised p-8 text-center">
             <p className="text-sm text-ink-muted">
-              {selectedPlatform ? `Belum ada konten untuk ${selectedPlatform}.` : "Belum ada konten. Tap \"+ Tambah\" buat mulai."}
+              {selectedPlatform
+                ? t("branding.emptyPlatform", { platform: selectedPlatform })
+                : t("branding.empty")}
             </p>
           </div>
         )}

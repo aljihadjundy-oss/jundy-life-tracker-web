@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { NewTask, TaskStatus } from "@/types/waktu";
-import { STATUS_LABEL, STATUS_ORDER } from "@/types/waktu";
+import { STATUS_ORDER } from "@/types/waktu";
+import { useT } from "@/lib/i18n";
 
 export default function TaskForm({
   defaultDate,
@@ -18,6 +19,7 @@ export default function TaskForm({
   const [status, setStatus] = useState<TaskStatus>("todo");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const t = useT();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,20 +44,20 @@ export default function TaskForm({
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" />
 
         <label className="mb-4 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Judul Task</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("time.taskTitle")}</span>
           <input
             type="text"
             required
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="mis. Follow up client"
+            placeholder={t("time.taskPlaceholder")}
             className="w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-base font-semibold text-ink outline-none focus:border-ink"
           />
         </label>
 
         <label className="mb-4 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Due Date</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("time.dueDate")}</span>
           <input
             type="date"
             required
@@ -66,7 +68,7 @@ export default function TaskForm({
         </label>
 
         <div className="mb-4">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Status</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("time.status")}</span>
           <div className="flex gap-2">
             {STATUS_ORDER.map((s) => (
               <button
@@ -77,19 +79,19 @@ export default function TaskForm({
                   status === s ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
                 }`}
               >
-                {STATUS_LABEL[s]}
+                {t(`status.${s}`)}
               </button>
             ))}
           </div>
         </div>
 
         <label className="mb-5 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Catatan (opsional)</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("finance.note")}</span>
           <input
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="detail tambahan"
+            placeholder={t("time.notePlaceholder")}
             className="w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-sm text-ink outline-none focus:border-ink"
           />
         </label>
@@ -99,7 +101,7 @@ export default function TaskForm({
           disabled={submitting}
           className="w-full rounded-2xl bg-ink py-4 text-sm font-bold text-surface transition active:scale-95 disabled:opacity-50"
         >
-          {submitting ? "Menyimpan..." : "Simpan Task"}
+          {submitting ? t("app.saving") : t("time.saveTask")}
         </button>
       </form>
     </div>

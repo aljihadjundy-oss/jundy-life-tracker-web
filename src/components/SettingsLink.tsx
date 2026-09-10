@@ -1,10 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { useT } from "@/lib/i18n";
 
 export default function SettingsLink() {
+  const t = useT();
   return (
     <Link
       href="/pengaturan"
-      aria-label="Pengaturan"
+      aria-label={t("app.settings")}
       className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-raised text-ink-muted transition active:scale-90"
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

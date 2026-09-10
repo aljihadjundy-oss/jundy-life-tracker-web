@@ -2,18 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useT } from "@/lib/i18n";
 
 const NAV_ITEMS = [
-  { href: "/", label: "Home", icon: HomeIcon },
-  { href: "/keuangan", label: "Keuangan", icon: WalletIcon },
-  { href: "/waktu", label: "Waktu", icon: CalendarIcon },
-  { href: "/branding", label: "Branding", icon: SparkIcon },
-  { href: "/kesehatan", label: "Sehat", icon: HeartIcon },
-  { href: "/jurnal", label: "Jurnal", icon: PenIcon },
+  { href: "/", labelKey: "nav.home", icon: HomeIcon },
+  { href: "/keuangan", labelKey: "nav.finance", icon: WalletIcon },
+  { href: "/waktu", labelKey: "nav.time", icon: CalendarIcon },
+  { href: "/branding", labelKey: "nav.branding", icon: SparkIcon },
+  { href: "/kesehatan", labelKey: "nav.health", icon: HeartIcon },
+  { href: "/jurnal", labelKey: "nav.journal", icon: PenIcon },
 ] as const;
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const t = useT();
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/90 backdrop-blur-lg">
@@ -34,7 +36,7 @@ export default function BottomNav() {
               <span
                 className={`text-[10px] font-medium transition-colors ${active ? "text-ink" : "text-ink-muted"}`}
               >
-                {item.label}
+                {t(item.labelKey)}
               </span>
             </Link>
           );

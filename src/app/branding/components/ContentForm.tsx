@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import type { ContentStatus, NewContentItem } from "@/types/branding";
-import { PLATFORMS, PLATFORM_EMOJI, STATUS_LABEL, STATUS_ORDER } from "@/types/branding";
+import { PLATFORMS, PLATFORM_EMOJI, STATUS_ORDER } from "@/types/branding";
 import { todayISO } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 export default function ContentForm({
   onSubmit,
@@ -18,6 +19,7 @@ export default function ContentForm({
   const [status, setStatus] = useState<ContentStatus>("draft");
   const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const t = useT();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -42,20 +44,20 @@ export default function ContentForm({
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" />
 
         <label className="mb-4 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Judul Konten</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("branding.contentTitle")}</span>
           <input
             type="text"
             required
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="mis. Carousel tips branding"
+            placeholder={t("branding.contentPlaceholder")}
             className="w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-base font-semibold text-ink outline-none focus:border-ink"
           />
         </label>
 
         <div className="mb-4">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Platform</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("branding.platform")}</span>
           <div className="flex flex-wrap gap-2">
             {PLATFORMS.map((p) => (
               <button
@@ -73,7 +75,7 @@ export default function ContentForm({
         </div>
 
         <label className="mb-4 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Tanggal Posting</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("branding.postDate")}</span>
           <input
             type="date"
             required
@@ -84,7 +86,7 @@ export default function ContentForm({
         </label>
 
         <div className="mb-4">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Status</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("time.status")}</span>
           <div className="flex gap-2">
             {STATUS_ORDER.map((s) => (
               <button
@@ -95,19 +97,19 @@ export default function ContentForm({
                   status === s ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
                 }`}
               >
-                {STATUS_LABEL[s]}
+                {t(`contentStatus.${s}`)}
               </button>
             ))}
           </div>
         </div>
 
         <label className="mb-5 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Catatan (opsional)</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("finance.note")}</span>
           <input
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="hook, caption, link draft, dll"
+            placeholder={t("branding.notePlaceholder")}
             className="w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-sm text-ink outline-none focus:border-ink"
           />
         </label>
@@ -117,7 +119,7 @@ export default function ContentForm({
           disabled={submitting}
           className="w-full rounded-2xl bg-ink py-4 text-sm font-bold text-surface transition active:scale-95 disabled:opacity-50"
         >
-          {submitting ? "Menyimpan..." : "Simpan Konten"}
+          {submitting ? t("app.saving") : t("branding.saveContent")}
         </button>
       </form>
     </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { JournalEntry, NewJournalEntry } from "@/types/journal";
 import { MOODS } from "@/types/journal";
 import { todayISO } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 export default function JournalEditor({
   entry,
@@ -19,6 +20,7 @@ export default function JournalEditor({
   const [mood, setMood] = useState(entry?.mood ?? "");
   const [date] = useState(entry?.date ?? todayISO());
   const [saving, setSaving] = useState(false);
+  const t = useT();
 
   async function handleSave() {
     if (!title.trim() && !content.trim()) {
@@ -27,7 +29,7 @@ export default function JournalEditor({
     }
     setSaving(true);
     try {
-      await onSave({ title: title.trim() || "Tanpa judul", content, mood, date });
+      await onSave({ title: title.trim() || t("journal.untitled"), content, mood, date });
       onClose();
     } finally {
       setSaving(false);
@@ -39,7 +41,7 @@ export default function JournalEditor({
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <button
           onClick={onClose}
-          aria-label="Tutup"
+          aria-label={t("app.close")}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-raised text-ink transition active:scale-90"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -52,7 +54,7 @@ export default function JournalEditor({
           disabled={saving}
           className="rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95 disabled:opacity-50"
         >
-          {saving ? "Menyimpan..." : "Simpan"}
+          {saving ? t("app.saving") : t("app.save")}
         </button>
       </div>
 
@@ -61,7 +63,7 @@ export default function JournalEditor({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Judul jurnal"
+          placeholder={t("journal.titlePlaceholder")}
           autoFocus
           className="mb-3 w-full bg-transparent text-xl font-bold text-ink outline-none placeholder:text-ink-muted"
         />
@@ -84,7 +86,7 @@ export default function JournalEditor({
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          placeholder="Tulis apa aja yang ada di pikiran kamu..."
+          placeholder={t("journal.contentPlaceholder")}
           className="min-h-[40vh] flex-1 resize-none bg-transparent text-base leading-relaxed text-ink outline-none placeholder:text-ink-muted"
         />
       </div>

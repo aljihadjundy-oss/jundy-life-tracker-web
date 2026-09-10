@@ -8,6 +8,7 @@ import { addEntry, deleteEntry, subscribeEntries, updateEntry } from "@/lib/jour
 import type { JournalEntry, NewJournalEntry } from "@/types/journal";
 import JournalCard from "./components/JournalCard";
 import JournalEditor from "./components/JournalEditor";
+import { useT } from "@/lib/i18n";
 
 export default function JurnalPage() {
   return (
@@ -19,6 +20,7 @@ export default function JurnalPage() {
 
 function JurnalContent() {
   const { user } = useAuth();
+  const t = useT();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
@@ -59,15 +61,15 @@ function JurnalContent() {
 
   return (
     <>
-      <TopBar title="Jurnal" subtitle="Tulis apa aja, kapan aja" />
+      <TopBar title={t("journal.title")} subtitle={t("journal.subtitle")} />
 
       <div className="mt-2 flex items-center justify-between px-5">
-        <h2 className="text-sm font-bold text-ink">Semua Tulisan</h2>
+        <h2 className="text-sm font-bold text-ink">{t("journal.allEntries")}</h2>
         <button
           onClick={openNew}
           className="flex items-center gap-1 rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
         >
-          + Tulis
+          {t("journal.write")}
         </button>
       </div>
 
@@ -80,7 +82,7 @@ function JurnalContent() {
 
         {!loading && entries.length === 0 && (
           <div className="rounded-2xl bg-surface-raised p-8 text-center">
-            <p className="text-sm text-ink-muted">Belum ada tulisan. Tap &quot;+ Tulis&quot; buat mulai.</p>
+            <p className="text-sm text-ink-muted">{t("journal.empty")}</p>
           </div>
         )}
 

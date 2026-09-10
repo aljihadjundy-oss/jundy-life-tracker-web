@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { NewHabit } from "@/types/kesehatan";
+import { useT } from "@/lib/i18n";
 
 export default function HabitForm({
   onSubmit,
@@ -12,6 +13,7 @@ export default function HabitForm({
 }) {
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const t = useT();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -36,14 +38,14 @@ export default function HabitForm({
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" />
 
         <label className="mb-5 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Nama Habit</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("health.habitName")}</span>
           <input
             type="text"
             required
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="mis. Minum air 8 gelas"
+            placeholder={t("health.habitPlaceholder")}
             className="w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-base font-semibold text-ink outline-none focus:border-ink"
           />
         </label>
@@ -53,7 +55,7 @@ export default function HabitForm({
           disabled={submitting}
           className="w-full rounded-2xl bg-ink py-4 text-sm font-bold text-surface transition active:scale-95 disabled:opacity-50"
         >
-          {submitting ? "Menyimpan..." : "Simpan Habit"}
+          {submitting ? t("app.saving") : t("health.saveHabit")}
         </button>
       </form>
     </div>

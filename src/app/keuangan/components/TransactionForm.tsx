@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { NewTransaction, TransactionType } from "@/types/finance";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/types/finance";
 import { todayISO } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 export default function TransactionForm({
   onSubmit,
@@ -18,6 +19,7 @@ export default function TransactionForm({
   const [note, setNote] = useState("");
   const [date, setDate] = useState(todayISO());
   const [submitting, setSubmitting] = useState(false);
+  const t = useT();
 
   const categories = type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
 
@@ -57,7 +59,7 @@ export default function TransactionForm({
               type === "expense" ? "bg-surface-card text-ink shadow-sm" : "text-ink-muted"
             }`}
           >
-            Pengeluaran
+            {t("finance.expense")}
           </button>
           <button
             type="button"
@@ -66,12 +68,12 @@ export default function TransactionForm({
               type === "income" ? "bg-surface-card text-ink shadow-sm" : "text-ink-muted"
             }`}
           >
-            Pemasukan
+            {t("finance.income")}
           </button>
         </div>
 
         <label className="mb-4 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Jumlah (Rp)</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("finance.amount")}</span>
           <input
             type="number"
             inputMode="numeric"
@@ -85,7 +87,7 @@ export default function TransactionForm({
         </label>
 
         <div className="mb-4">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Kategori</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("finance.category")}</span>
           <div className="flex flex-wrap gap-2">
             {categories.map((c) => (
               <button
@@ -98,14 +100,14 @@ export default function TransactionForm({
                     : "bg-surface-raised text-ink-muted"
                 }`}
               >
-                {c}
+                {t(`category.${c}`)}
               </button>
             ))}
           </div>
         </div>
 
         <label className="mb-4 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Tanggal</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("finance.date")}</span>
           <input
             type="date"
             required
@@ -116,12 +118,12 @@ export default function TransactionForm({
         </label>
 
         <label className="mb-5 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">Catatan (opsional)</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("finance.note")}</span>
           <input
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="mis. makan siang tim"
+            placeholder={t("finance.notePlaceholder")}
             className="w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-sm text-ink outline-none focus:border-ink"
           />
         </label>
@@ -131,7 +133,7 @@ export default function TransactionForm({
           disabled={submitting}
           className="w-full rounded-2xl bg-ink py-4 text-sm font-bold text-surface transition active:scale-95 disabled:opacity-50"
         >
-          {submitting ? "Menyimpan..." : "Simpan Transaksi"}
+          {submitting ? t("app.saving") : t("finance.saveTransaction")}
         </button>
       </form>
     </div>

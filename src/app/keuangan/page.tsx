@@ -17,6 +17,7 @@ import TransactionCard from "./components/TransactionCard";
 import TransactionForm from "./components/TransactionForm";
 import BudgetSheet from "./components/BudgetSheet";
 import BalanceCard from "./components/BalanceCard";
+import { useT } from "@/lib/i18n";
 
 export default function KeuanganPage() {
   return (
@@ -28,6 +29,7 @@ export default function KeuanganPage() {
 
 function KeuanganContent() {
   const { user } = useAuth();
+  const t = useT();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [monthlyBudget, setMonthlyBudgetState] = useState(0);
   const [showForm, setShowForm] = useState(false);
@@ -77,7 +79,7 @@ function KeuanganContent() {
 
   return (
     <>
-      <TopBar title="Keuangan" subtitle="Catat & pantau uangmu" />
+      <TopBar title={t("finance.title")} subtitle={t("finance.subtitle")} />
 
       <BalanceCard
         balance={balance}
@@ -89,12 +91,12 @@ function KeuanganContent() {
       />
 
       <div className="mt-6 flex items-center justify-between px-5">
-        <h2 className="text-sm font-bold text-ink">Transaksi Terbaru</h2>
+        <h2 className="text-sm font-bold text-ink">{t("finance.recentTransactions")}</h2>
         <button
           onClick={() => setShowForm(true)}
           className="flex items-center gap-1 rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
         >
-          + Tambah
+          {t("app.add")}
         </button>
       </div>
 
@@ -107,12 +109,12 @@ function KeuanganContent() {
 
         {!loading && transactions.length === 0 && (
           <div className="rounded-2xl bg-surface-raised p-8 text-center">
-            <p className="text-sm text-ink-muted">Belum ada transaksi. Tap &quot;+ Tambah&quot; buat mulai.</p>
+            <p className="text-sm text-ink-muted">{t("finance.empty")}</p>
           </div>
         )}
 
-        {transactions.map((t) => (
-          <TransactionCard key={t.id} transaction={t} onDelete={handleDelete} />
+        {transactions.map((tx) => (
+          <TransactionCard key={tx.id} transaction={tx} onDelete={handleDelete} />
         ))}
       </div>
 

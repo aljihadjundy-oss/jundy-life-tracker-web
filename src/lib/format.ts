@@ -1,5 +1,16 @@
+// Reads the language the same way i18n.tsx does. Kept dependency-free so these
+// stay plain functions — components re-render on language change because they
+// also subscribe via useT(), which re-runs these formatters.
+function locale() {
+  try {
+    return localStorage.getItem("lang") === "en" ? "en-US" : "id-ID";
+  } catch {
+    return "id-ID";
+  }
+}
+
 export function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("id-ID", {
+  return new Intl.NumberFormat(locale(), {
     style: "currency",
     currency: "IDR",
     maximumFractionDigits: 0,
@@ -21,7 +32,7 @@ export function toISODate(date: Date) {
 }
 
 export function formatDate(isoDate: string) {
-  return new Intl.DateTimeFormat("id-ID", {
+  return new Intl.DateTimeFormat(locale(), {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -39,7 +50,7 @@ export function addDaysISO(isoDate: string, days: number) {
 }
 
 export function weekdayShort(isoDate: string) {
-  return new Intl.DateTimeFormat("id-ID", { weekday: "short" }).format(parseISODate(isoDate));
+  return new Intl.DateTimeFormat(locale(), { weekday: "short" }).format(parseISODate(isoDate));
 }
 
 export function currentMonthKey(date = new Date()) {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Transaction } from "@/types/finance";
 import { formatCurrency } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 const CATEGORY_EMOJI: Record<string, string> = {
   Makan: "🍜",
@@ -27,6 +28,7 @@ export default function TransactionCard({
   onDelete: (id: string) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const t = useT();
   const isIncome = transaction.type === "income";
 
   return (
@@ -36,9 +38,9 @@ export default function TransactionCard({
       </div>
 
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-ink">{transaction.category}</p>
+        <p className="truncate text-sm font-semibold text-ink">{t(`category.${transaction.category}`)}</p>
         <p className="truncate text-xs text-ink-muted">
-          {transaction.note || "Tanpa catatan"}
+          {transaction.note || t("finance.noNote")}
         </p>
       </div>
 
@@ -53,13 +55,13 @@ export default function TransactionCard({
               onClick={() => onDelete(transaction.id)}
               className="text-[11px] font-semibold text-red-500"
             >
-              Hapus
+              {t("app.delete")}
             </button>
             <button
               onClick={() => setConfirming(false)}
               className="text-[11px] font-medium text-ink-muted"
             >
-              Batal
+              {t("app.cancel")}
             </button>
           </div>
         ) : (
@@ -67,7 +69,7 @@ export default function TransactionCard({
             onClick={() => setConfirming(true)}
             className="text-[11px] font-medium text-ink-muted underline-offset-2 hover:underline"
           >
-            Hapus
+            {t("app.delete")}
           </button>
         )}
       </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { DailyMetrics } from "@/types/kesehatan";
+import { useT } from "@/lib/i18n";
 
 export default function MetricsForm({
   date,
@@ -18,6 +19,7 @@ export default function MetricsForm({
   const [exerciseMinutes, setExerciseMinutes] = useState(initial ? String(initial.exerciseMinutes) : "");
   const [waterGlasses, setWaterGlasses] = useState(initial ? String(initial.waterGlasses) : "");
   const [submitting, setSubmitting] = useState(false);
+  const t = useT();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -43,10 +45,10 @@ export default function MetricsForm({
         className="w-full rounded-t-3xl bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl animate-[slideUp_0.25s_ease-out]"
       >
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" />
-        <h2 className="mb-4 text-base font-bold text-ink">Log Metrik</h2>
+        <h2 className="mb-4 text-base font-bold text-ink">{t("health.logMetrics")}</h2>
 
         <label className="mb-4 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">😴 Jam Tidur</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("health.sleepHours")}</span>
           <input
             type="number"
             inputMode="decimal"
@@ -61,7 +63,7 @@ export default function MetricsForm({
         </label>
 
         <label className="mb-4 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">🏃 Olahraga (menit)</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("health.exerciseMinutes")}</span>
           <input
             type="number"
             inputMode="numeric"
@@ -74,7 +76,7 @@ export default function MetricsForm({
         </label>
 
         <label className="mb-5 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">💧 Air Minum (gelas)</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("health.waterGlasses")}</span>
           <input
             type="number"
             inputMode="numeric"
@@ -91,7 +93,7 @@ export default function MetricsForm({
           disabled={submitting}
           className="w-full rounded-2xl bg-ink py-4 text-sm font-bold text-surface transition active:scale-95 disabled:opacity-50"
         >
-          {submitting ? "Menyimpan..." : "Simpan Metrik"}
+          {submitting ? t("app.saving") : t("health.saveMetrics")}
         </button>
       </form>
     </div>

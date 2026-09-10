@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import type { Task } from "@/types/waktu";
-import { STATUS_LABEL, nextStatus } from "@/types/waktu";
+import { nextStatus } from "@/types/waktu";
 import { formatDate, todayISO } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 const STATUS_STYLE: Record<Task["status"], string> = {
   todo: "bg-surface-raised text-ink-muted",
@@ -21,6 +22,7 @@ export default function TaskCard({
   onDelete: (id: string) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const t = useT();
   const isDone = task.status === "done";
   const isOverdue = !isDone && task.dueDate < todayISO();
 
@@ -28,7 +30,7 @@ export default function TaskCard({
     <div className="flex items-center gap-3 rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border/60">
       <button
         onClick={() => onCycleStatus(task.id, nextStatus(task.status))}
-        aria-label="Ubah status"
+        aria-label={t("time.changeStatus")}
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition active:scale-90 ${
           isDone ? "border-accent-finance bg-accent-finance text-white" : "border-border text-transparent"
         }`}
@@ -49,15 +51,15 @@ export default function TaskCard({
 
       <div className="flex flex-col items-end gap-1">
         <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${isOverdue ? "bg-red-500/15 text-red-500" : STATUS_STYLE[task.status]}`}>
-          {isOverdue ? "Telat" : STATUS_LABEL[task.status]}
+          {isOverdue ? t("time.late") : t(`status.${task.status}`)}
         </span>
         {confirming ? (
           <div className="flex gap-2">
             <button onClick={() => onDelete(task.id)} className="text-[11px] font-semibold text-red-500">
-              Hapus
+              {t("app.delete")}
             </button>
             <button onClick={() => setConfirming(false)} className="text-[11px] font-medium text-ink-muted">
-              Batal
+              {t("app.cancel")}
             </button>
           </div>
         ) : (
@@ -65,7 +67,7 @@ export default function TaskCard({
             onClick={() => setConfirming(true)}
             className="text-[11px] font-medium text-ink-muted underline-offset-2 hover:underline"
           >
-            Hapus
+            {t("app.delete")}
           </button>
         )}
       </div>

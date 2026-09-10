@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n";
 
 export default function BudgetSheet({
   currentBudget,
@@ -13,6 +14,7 @@ export default function BudgetSheet({
 }) {
   const [amount, setAmount] = useState(currentBudget ? String(currentBudget) : "");
   const [submitting, setSubmitting] = useState(false);
+  const t = useT();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -33,10 +35,8 @@ export default function BudgetSheet({
         className="w-full rounded-t-3xl bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl animate-[slideUp_0.25s_ease-out]"
       >
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" />
-        <h2 className="mb-1 text-base font-bold text-ink">Budget Bulanan</h2>
-        <p className="mb-4 text-xs text-ink-muted">
-          Batas pengeluaran yang mau kamu jaga tiap bulan.
-        </p>
+        <h2 className="mb-1 text-base font-bold text-ink">{t("finance.monthlyBudget")}</h2>
+<p className="mb-4 text-xs text-ink-muted">{t("finance.budgetHint")}</p>
         <input
           type="number"
           inputMode="numeric"
@@ -52,7 +52,7 @@ export default function BudgetSheet({
           disabled={submitting}
           className="w-full rounded-2xl bg-ink py-4 text-sm font-bold text-surface transition active:scale-95 disabled:opacity-50"
         >
-          {submitting ? "Menyimpan..." : "Simpan Budget"}
+          {submitting ? t("app.saving") : t("finance.saveBudget")}
         </button>
       </form>
     </div>

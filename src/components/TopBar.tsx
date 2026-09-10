@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import ThemeToggle from "./ThemeToggle";
 import { useAuth } from "@/lib/auth-context";
+import { useT } from "@/lib/i18n";
 
 export default function TopBar({
   title,
@@ -14,6 +15,7 @@ export default function TopBar({
   extra?: ReactNode;
 }) {
   const { signOut } = useAuth();
+  const t = useT();
 
   return (
     <header className="flex items-center justify-between px-5 pb-2 pt-6">
@@ -26,7 +28,7 @@ export default function TopBar({
         <ThemeToggle />
         <button
           onClick={signOut}
-          aria-label="Keluar"
+          aria-label={t("app.signOut")}
           className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-raised text-ink-muted transition active:scale-90"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

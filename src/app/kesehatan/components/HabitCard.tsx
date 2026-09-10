@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Habit } from "@/types/kesehatan";
+import { useT } from "@/lib/i18n";
 
 export default function HabitCard({
   habit,
@@ -15,12 +16,13 @@ export default function HabitCard({
   onDelete: (id: string) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const t = useT();
 
   return (
     <div className="flex items-center gap-3 rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border/60">
       <button
         onClick={() => onToggle(habit.id, !completed)}
-        aria-label="Toggle habit"
+        aria-label={t("health.toggleHabit")}
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition active:scale-90 ${
           completed ? "border-accent-health bg-accent-health text-white" : "border-border text-transparent"
         }`}
@@ -37,10 +39,10 @@ export default function HabitCard({
       {confirming ? (
         <div className="flex gap-2">
           <button onClick={() => onDelete(habit.id)} className="text-[11px] font-semibold text-red-500">
-            Hapus
+            {t("app.delete")}
           </button>
           <button onClick={() => setConfirming(false)} className="text-[11px] font-medium text-ink-muted">
-            Batal
+            {t("app.cancel")}
           </button>
         </div>
       ) : (
@@ -48,7 +50,7 @@ export default function HabitCard({
           onClick={() => setConfirming(true)}
           className="text-[11px] font-medium text-ink-muted underline-offset-2 hover:underline"
         >
-          Hapus
+          {t("app.delete")}
         </button>
       )}
     </div>

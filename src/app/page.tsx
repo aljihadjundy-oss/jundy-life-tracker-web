@@ -15,12 +15,13 @@ import type { Task } from "@/types/waktu";
 import type { ContentItem } from "@/types/branding";
 import type { Habit, HabitLog } from "@/types/kesehatan";
 import { formatCurrency, currentMonthKey, todayISO, addDaysISO } from "@/lib/format";
+import { useT } from "@/lib/i18n";
 
 const MODULES = [
-  { href: "/keuangan", label: "Keuangan", emoji: "💰", gradient: "from-emerald-400 to-teal-500", live: true },
-  { href: "/waktu", label: "Waktu", emoji: "🗓️", gradient: "from-blue-400 to-indigo-500", live: true },
-  { href: "/branding", label: "Branding", emoji: "✨", gradient: "from-pink-400 to-fuchsia-500", live: true },
-  { href: "/kesehatan", label: "Kesehatan", emoji: "❤️", gradient: "from-orange-400 to-red-500", live: true },
+  { href: "/keuangan", labelKey: "home.modules.finance", emoji: "💰", gradient: "from-emerald-400 to-teal-500" },
+  { href: "/waktu", labelKey: "home.modules.time", emoji: "🗓️", gradient: "from-blue-400 to-indigo-500" },
+  { href: "/branding", labelKey: "home.modules.branding", emoji: "✨", gradient: "from-pink-400 to-fuchsia-500" },
+  { href: "/kesehatan", labelKey: "home.modules.health", emoji: "❤️", gradient: "from-orange-400 to-red-500" },
 ] as const;
 
 export default function HomePage() {
@@ -33,6 +34,7 @@ export default function HomePage() {
 
 function DashboardContent() {
   const { user } = useAuth();
+  const t = useT();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [content, setContent] = useState<ContentItem[]>([]);
@@ -114,15 +116,13 @@ function DashboardContent() {
     return { habitStreak, doneToday, totalHabits: habits.length };
   }, [habits, habitLogs]);
 
-  const otherModules = MODULES.filter((m) => !m.live);
-
   const firstName = user?.displayName?.split(" ")[0] ?? "";
 
   return (
     <>
       <TopBar
-        title={`Halo, ${firstName || "Jundy"} 👋`}
-        subtitle="Ini ringkasan hari ini"
+        title={t("home.greeting", { name: firstName || "Jundy" })}
+        subtitle={t("home.subtitle")}
         extra={<SettingsLink />}
       />
 
@@ -135,7 +135,7 @@ function DashboardContent() {
                   {m.emoji}
                 </div>
               </div>
-              <span className="text-[11px] font-medium text-ink-muted">{m.label}</span>
+              <span className="text-[11px] font-medium text-ink-muted">{t(m.labelKey)}</span>
             </Link>
           ))}
         </div>
@@ -146,10 +146,10 @@ function DashboardContent() {
           href="/keuangan"
           className="block rounded-3xl bg-gradient-to-br from-brand-start via-brand-mid to-brand-end p-5 text-white shadow-lg shadow-brand-mid/20 transition active:scale-[0.98]"
         >
-          <p className="text-xs font-medium text-white/80">Saldo Kamu</p>
+          <p className="text-xs font-medium text-white/80">{t("home.balance")}</p>
           <p className="mt-1 text-2xl font-extrabold tracking-tight">{formatCurrency(balance)}</p>
           <p className="mt-3 text-xs text-white/85">
-            Pengeluaran bulan ini: {formatCurrency(monthExpense)}
+            {t("home.monthExpense", { amount: formatCurrency(monthExpense) })}
           </p>
         </Link>
 
@@ -157,63 +157,41 @@ function DashboardContent() {
           href="/waktu"
           className="block rounded-3xl bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-500 p-5 text-white shadow-lg shadow-indigo-500/20 transition active:scale-[0.98]"
         >
-          <p className="text-xs font-medium text-white/80">Task Hari Ini</p>
+          <p className="text-xs font-medium text-white/80">{t("home.todayTasks")}</p>
           <p className="mt-1 text-2xl font-extrabold tracking-tight">
-            {todayTaskCount} task{overdueTaskCount > 0 ? `, ${overdueTaskCount} telat` : ""}
+            {t("home.taskCount", { count: todayTaskCount })}
+            {overdueTaskCount > 0 ? t("home.taskOverdue", { count: overdueTaskCount }) : ""}
           </p>
-          <p className="mt-3 text-xs text-white/85">Tap buat lihat agenda lengkap</p>
+          <p className="mt-3 text-xs text-white/85">{t("home.tapAgenda")}</p>
         </Link>
 
         <Link
           href="/branding"
           className="block rounded-3xl bg-gradient-to-br from-fuchsia-500 via-pink-500 to-rose-400 p-5 text-white shadow-lg shadow-pink-500/20 transition active:scale-[0.98]"
         >
-          <p className="text-xs font-medium text-white/80">Konsistensi Posting</p>
+          <p className="text-xs font-medium text-white/80">{t("home.postingConsistency")}</p>
           <p className="mt-1 text-2xl font-extrabold tracking-tight">
-            {streak > 0 ? `🔥 ${streak} hari beruntun` : "Belum ada streak"}
+            {streak > 0 ? t("home.streakDays", { count: streak }) : t("home.noStreak")}
           </p>
-          <p className="mt-3 text-xs text-white/85">Tap buat lihat content calendar</p>
+          <p className="mt-3 text-xs text-white/85">{t("home.tapCalendar")}</p>
         </Link>
 
         <Link
           href="/kesehatan"
           className="block rounded-3xl bg-gradient-to-br from-orange-500 via-red-500 to-rose-500 p-5 text-white shadow-lg shadow-orange-500/20 transition active:scale-[0.98]"
         >
-          <p className="text-xs font-medium text-white/80">Habit Streak</p>
+          <p className="text-xs font-medium text-white/80">{t("home.habitStreak")}</p>
           <p className="mt-1 text-2xl font-extrabold tracking-tight">
-            {habitStreak > 0 ? `🔥 ${habitStreak} hari beruntun` : "Belum ada streak"}
+            {habitStreak > 0 ? t("home.streakDays", { count: habitStreak }) : t("home.noStreak")}
           </p>
           <p className="mt-3 text-xs text-white/85">
-            {totalHabits > 0 ? `${doneToday}/${totalHabits} habit selesai hari ini` : "Tap buat mulai tracking"}
+            {totalHabits > 0
+              ? t("home.habitDone", { done: doneToday, total: totalHabits })
+              : t("home.tapStartTracking")}
           </p>
         </Link>
       </section>
 
-      {otherModules.length > 0 && (
-        <section className="mt-6 px-5">
-          <h2 className="mb-3 text-sm font-bold text-ink">Modul Lain</h2>
-          <div className="flex flex-col gap-2.5">
-            {otherModules.map((m) => (
-              <Link
-                key={m.href}
-                href={m.href}
-                className="flex items-center gap-3 rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border/60 transition active:scale-[0.98]"
-              >
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${m.gradient} text-lg`}>
-                  {m.emoji}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-ink">{m.label}</p>
-                  <p className="text-xs text-ink-muted">Segera hadir</p>
-                </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-ink-muted">
-                  <path d="M9 6l6 6-6 6" />
-                </svg>
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
     </>
   );
 }

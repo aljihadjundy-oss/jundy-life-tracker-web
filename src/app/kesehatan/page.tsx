@@ -21,6 +21,7 @@ import MetricsCard from "./components/MetricsCard";
 import MetricsForm from "./components/MetricsForm";
 import HabitCard from "./components/HabitCard";
 import HabitForm from "./components/HabitForm";
+import { useT } from "@/lib/i18n";
 
 export default function KesehatanPage() {
   return (
@@ -32,6 +33,7 @@ export default function KesehatanPage() {
 
 function KesehatanContent() {
   const { user } = useAuth();
+  const t = useT();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [metricsList, setMetricsList] = useState<DailyMetrics[]>([]);
@@ -123,12 +125,12 @@ function KesehatanContent() {
 
   return (
     <>
-      <TopBar title="Kesehatan" subtitle="Habit & metrik harian" />
+      <TopBar title={t("health.title")} subtitle={t("health.subtitle")} />
 
       <HealthSummaryCard streak={streak} doneToday={doneToday} totalHabits={habits.length} />
 
       <div className="mt-5">
-        <h2 className="px-5 text-sm font-bold text-ink">Riwayat</h2>
+        <h2 className="px-5 text-sm font-bold text-ink">{t("health.history")}</h2>
         <DayPicker selected={selectedDate} onSelect={setSelectedDate} completeDates={completeDates} />
       </div>
 
@@ -137,12 +139,12 @@ function KesehatanContent() {
       </div>
 
       <div className="mt-5 flex items-center justify-between px-5">
-        <h2 className="text-sm font-bold text-ink">Habit Checklist</h2>
+        <h2 className="text-sm font-bold text-ink">{t("health.habitChecklist")}</h2>
         <button
           onClick={() => setShowHabitForm(true)}
           className="flex items-center gap-1 rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
         >
-          + Tambah
+          {t("app.add")}
         </button>
       </div>
 
@@ -155,7 +157,7 @@ function KesehatanContent() {
 
         {!loading && habits.length === 0 && (
           <div className="rounded-2xl bg-surface-raised p-8 text-center">
-            <p className="text-sm text-ink-muted">Belum ada habit. Tap &quot;+ Tambah&quot; buat mulai.</p>
+            <p className="text-sm text-ink-muted">{t("health.empty")}</p>
           </div>
         )}
 

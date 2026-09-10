@@ -1,4 +1,5 @@
 import { PLATFORMS, PLATFORM_EMOJI } from "@/types/branding";
+import { useT } from "@/lib/i18n";
 
 export default function PlatformChips({
   selected,
@@ -7,6 +8,7 @@ export default function PlatformChips({
   selected: string | null;
   onSelect: (platform: string | null) => void;
 }) {
+  const t = useT();
   return (
     <div className="no-scrollbar flex gap-2 overflow-x-auto px-5 pb-1">
       <button
@@ -15,7 +17,7 @@ export default function PlatformChips({
           selected === null ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
         }`}
       >
-        Semua
+        {t("branding.all")}
       </button>
       {PLATFORMS.map((p) => (
         <button

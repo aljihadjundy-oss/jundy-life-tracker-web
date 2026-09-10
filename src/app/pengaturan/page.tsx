@@ -11,6 +11,8 @@ import {
   type NotificationSettings,
 } from "@/lib/messaging";
 import Switch from "./components/Switch";
+import { setLanguage, useLanguage, useT } from "@/lib/i18n";
+import { LANGUAGES } from "@/lib/translations";
 
 export default function PengaturanPage() {
   return (
@@ -22,6 +24,8 @@ export default function PengaturanPage() {
 
 function PengaturanContent() {
   const { user } = useAuth();
+  const t = useT();
+  const lang = useLanguage();
   const [settings, setSettings] = useState<NotificationSettings>({
     enabled: false,
     reminderTime: "20:00",
@@ -68,27 +72,41 @@ function PengaturanContent() {
 
   return (
     <>
-      <TopBar title="Pengaturan" subtitle="Notifikasi & reminder" />
+      <TopBar title={t("settings.title")} subtitle={t("settings.subtitle")} />
 
       <div className="mt-2 flex flex-col gap-3 px-5 pb-6">
         <div className="rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border/60">
-          <h2 className="text-sm font-bold text-ink">Notifikasi Push</h2>
-          <p className="mt-1 text-xs text-ink-muted">
-            Izinin browser buat ngirim notifikasi ke HP kamu, walau app-nya lagi ketutup.
-          </p>
+          <h2 className="text-sm font-bold text-ink">{t("settings.language")}</h2>
+          <p className="mt-1 text-xs text-ink-muted">{t("settings.languageHint")}</p>
+          <div className="mt-3 flex gap-2">
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.value}
+                onClick={() => setLanguage(l.value)}
+                className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
+                  lang === l.value ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+                }`}
+              >
+                {l.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border/60">
+          <h2 className="text-sm font-bold text-ink">{t("settings.pushTitle")}</h2>
+<p className="mt-1 text-xs text-ink-muted">{t("settings.pushHint")}</p>
 
           <button
             onClick={handleEnable}
             disabled={enabling || isActive}
             className="mt-3 w-full rounded-2xl bg-ink py-3 text-sm font-bold text-surface transition active:scale-95 disabled:opacity-50"
           >
-            {isActive ? "Notifikasi Aktif ✓" : enabling ? "Mengaktifkan..." : "Aktifkan Notifikasi"}
+            {isActive ? t("settings.pushActive") : enabling ? t("settings.pushEnabling") : t("settings.pushEnable")}
           </button>
 
           {permission === "denied" && (
-            <p className="mt-2 text-xs text-red-500">
-              Izin notifikasi diblokir di browser. Aktifin manual lewat pengaturan situs browser kamu.
-            </p>
+<p className="mt-2 text-xs text-red-500">{t("settings.pushDenied")}</p>
           )}
           {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
         </div>
@@ -96,16 +114,14 @@ function PengaturanContent() {
         <div className="rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border/60">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-bold text-ink">Reminder Harian</h2>
-              <p className="mt-1 text-xs text-ink-muted">
-                Ringkasan task & habit yang belum kelar, dikirim tiap hari.
-              </p>
+              <h2 className="text-sm font-bold text-ink">{t("settings.reminderTitle")}</h2>
+<p className="mt-1 text-xs text-ink-muted">{t("settings.reminderHint")}</p>
             </div>
             <Switch checked={settings.enabled} onChange={handleToggleReminder} />
           </div>
 
           <label className={`mt-3 block ${settings.enabled ? "" : "pointer-events-none opacity-40"}`}>
-            <span className="mb-1.5 block text-xs font-medium text-ink-muted">Jam Reminder</span>
+            <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("settings.reminderTime")}</span>
             <input
               type="time"
               value={settings.reminderTime}
@@ -115,10 +131,7 @@ function PengaturanContent() {
           </label>
         </div>
 
-        <p className="px-1 text-[11px] leading-relaxed text-ink-muted">
-          Catatan: reminder terjadwal butuh Cloud Function yang jalan di Firebase project kamu (plan Blaze).
-          Lihat README buat cara deploy-nya.
-        </p>
+<p className="px-1 text-[11px] leading-relaxed text-ink-muted">{t("settings.reminderNote")}</p>
       </div>
     </>
   );

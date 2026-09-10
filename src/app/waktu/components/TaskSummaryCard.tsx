@@ -1,3 +1,7 @@
+"use client";
+
+import { useT } from "@/lib/i18n";
+
 export default function TaskSummaryCard({
   todo,
   inProgress,
@@ -9,17 +13,19 @@ export default function TaskSummaryCard({
   done: number;
   overdue: number;
 }) {
+  const t = useT();
   return (
     <div className="mx-5 rounded-3xl bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-500 p-5 text-white shadow-lg shadow-indigo-500/20">
-      <p className="text-xs font-medium text-white/80">Task Kamu</p>
+      <p className="text-xs font-medium text-white/80">{t("time.yourTasks")}</p>
       <p className="mt-1 text-2xl font-extrabold tracking-tight">
-        {todo + inProgress} aktif{overdue > 0 ? `, ${overdue} telat` : ""}
+        {t("time.activeCount", { count: todo + inProgress })}
+        {overdue > 0 ? t("time.lateCount", { count: overdue }) : ""}
       </p>
 
       <div className="mt-4 flex gap-3">
-        <Stat label="To Do" value={todo} />
-        <Stat label="Progress" value={inProgress} />
-        <Stat label="Done" value={done} />
+        <Stat label={t("status.todo")} value={todo} />
+        <Stat label={t("status.in_progress")} value={inProgress} />
+        <Stat label={t("status.done")} value={done} />
       </div>
     </div>
   );

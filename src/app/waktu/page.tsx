@@ -11,6 +11,7 @@ import DateStrip from "./components/DateStrip";
 import TaskSummaryCard from "./components/TaskSummaryCard";
 import TaskCard from "./components/TaskCard";
 import TaskForm from "./components/TaskForm";
+import { useT } from "@/lib/i18n";
 
 export default function WaktuPage() {
   return (
@@ -22,6 +23,7 @@ export default function WaktuPage() {
 
 function WaktuContent() {
   const { user } = useAuth();
+  const t = useT();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(todayISO());
@@ -86,20 +88,20 @@ function WaktuContent() {
 
   return (
     <>
-      <TopBar title="Waktu" subtitle="Task & jadwal harian" />
+      <TopBar title={t("time.title")} subtitle={t("time.subtitle")} />
 
       <TaskSummaryCard todo={todo} inProgress={inProgress} done={done} overdue={overdue} />
 
       <div className="mt-5">
         <div className="flex items-center justify-between px-5">
-          <h2 className="text-sm font-bold text-ink">Agenda</h2>
+          <h2 className="text-sm font-bold text-ink">{t("time.agenda")}</h2>
           <button
             onClick={() => setShowAll((v) => !v)}
             className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
               showAll ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
             }`}
           >
-            Semua Task
+            {t("time.allTasks")}
           </button>
         </div>
         <div className={showAll ? "pointer-events-none opacity-40" : ""}>
@@ -109,13 +111,13 @@ function WaktuContent() {
 
       <div className="mt-3 flex items-center justify-between px-5">
         <h2 className="text-sm font-bold text-ink">
-          {showAll ? "Semua Task" : "Task Hari Ini"}
+          {showAll ? t("time.allTasks") : t("time.todayTasks")}
         </h2>
         <button
           onClick={() => setShowForm(true)}
           className="flex items-center gap-1 rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
         >
-          + Tambah
+          {t("app.add")}
         </button>
       </div>
 
@@ -129,13 +131,13 @@ function WaktuContent() {
         {!loading && visibleTasks.length === 0 && (
           <div className="rounded-2xl bg-surface-raised p-8 text-center">
             <p className="text-sm text-ink-muted">
-              {showAll ? "Belum ada task sama sekali." : "Gak ada task di tanggal ini."}
+              {showAll ? t("time.emptyAll") : t("time.emptyDate")}
             </p>
           </div>
         )}
 
-        {visibleTasks.map((t) => (
-          <TaskCard key={t.id} task={t} onCycleStatus={handleCycleStatus} onDelete={handleDelete} />
+        {visibleTasks.map((task) => (
+          <TaskCard key={task.id} task={task} onCycleStatus={handleCycleStatus} onDelete={handleDelete} />
         ))}
       </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { useT } from "@/lib/i18n";
 
 type Theme = "light" | "dark";
 
@@ -27,6 +28,7 @@ function setTheme(theme: Theme) {
 
 export default function ThemeToggle() {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const t = useT();
 
   function toggle() {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -35,7 +37,7 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggle}
-      aria-label="Toggle dark mode"
+      aria-label={t("app.toggleTheme")}
       className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-raised text-ink transition active:scale-90"
     >
       {theme === "dark" ? (

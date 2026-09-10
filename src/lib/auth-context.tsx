@@ -37,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (firebaseUser && firebaseUser.email !== OWNER_EMAIL) {
         firebaseSignOut(auth);
         setUser(null);
-        setError("Akun ini gak punya akses ke app ini.");
+        setError("auth.noAccess");
       } else {
         setUser(firebaseUser);
       }
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Surfaces errors from the redirect sign-in flow once we land back here.
   useEffect(() => {
     getRedirectResult(auth).catch((err: unknown) => {
-      setError(err instanceof Error ? err.message : "Gagal login, coba lagi.");
+      setError(err instanceof Error ? err.message : "auth.failed");
     });
   }, []);
 
@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // (standalone display mode) and in browsers blocking third-party storage.
       await signInWithRedirect(auth, new GoogleAuthProvider());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal login, coba lagi.");
+      setError(err instanceof Error ? err.message : "auth.failed");
     }
   }
 
