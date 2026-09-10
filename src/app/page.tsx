@@ -6,12 +6,14 @@ import AppShell from "@/components/AppShell";
 import TopBar from "@/components/TopBar";
 import { useAuth } from "@/lib/auth-context";
 import { subscribeTransactions } from "@/lib/finance";
+import { subscribeTasks } from "@/lib/waktu";
 import type { Transaction } from "@/types/finance";
-import { formatCurrency, currentMonthKey } from "@/lib/format";
+import type { Task } from "@/types/waktu";
+import { formatCurrency, currentMonthKey, todayISO } from "@/lib/format";
 
 const MODULES = [
   { href: "/keuangan", label: "Keuangan", emoji: "💰", gradient: "from-emerald-400 to-teal-500", live: true },
-  { href: "/waktu", label: "Waktu", emoji: "🗓️", gradient: "from-blue-400 to-indigo-500", live: false },
+  { href: "/waktu", label: "Waktu", emoji: "🗓️", gradient: "from-blue-400 to-indigo-500", live: true },
   { href: "/branding", label: "Branding", emoji: "✨", gradient: "from-pink-400 to-fuchsia-500", live: false },
   { href: "/kesehatan", label: "Kesehatan", emoji: "❤️", gradient: "from-orange-400 to-red-500", live: false },
 ] as const;
@@ -27,11 +29,16 @@ export default function HomePage() {
 function DashboardContent() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   useEffect(() => {
     if (!user) return;
-    const unsub = subscribeTransactions(user.uid, setTransactions);
-    return unsub;
+    const unsubTx = subscribeTransactions(user.uid, setTransactions);
+    const unsubTasks = subscribeTasks(user.uid, setTasks);
+    return () => {
+      unsubTx();
+      unsubTasks();
+    };
   }, [user]);
 
   const { balance, monthExpense } = useMemo(() => {
@@ -46,6 +53,18 @@ function DashboardContent() {
     }
     return { balance: income - expense, monthExpense };
   }, [transactions]);
+
+  const { todayTaskCount, overdueTaskCount } = useMemo(() => {
+    const today = todayISO();
+    let todayTaskCount = 0;
+    let overdueTaskCount = 0;
+    for (const t of tasks) {
+      if (t.status === "done") continue;
+      if (t.dueDate === today) todayTaskCount++;
+      else if (t.dueDate < today) overdueTaskCount++;
+    }
+    return { todayTaskCount, overdueTaskCount };
+  }, [tasks]);
 
   const firstName = user?.displayName?.split(" ")[0] ?? "";
 
@@ -68,7 +87,7 @@ function DashboardContent() {
         </div>
       </section>
 
-      <section className="mt-5 px-5">
+      <section className="mt-5 flex flex-col gap-3 px-5">
         <Link
           href="/keuangan"
           className="block rounded-3xl bg-gradient-to-br from-brand-start via-brand-mid to-brand-end p-5 text-white shadow-lg shadow-brand-mid/20 transition active:scale-[0.98]"
@@ -78,6 +97,17 @@ function DashboardContent() {
           <p className="mt-3 text-xs text-white/85">
             Pengeluaran bulan ini: {formatCurrency(monthExpense)}
           </p>
+        </Link>
+
+        <Link
+          href="/waktu"
+          className="block rounded-3xl bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-500 p-5 text-white shadow-lg shadow-indigo-500/20 transition active:scale-[0.98]"
+        >
+          <p className="text-xs font-medium text-white/80">Task Hari Ini</p>
+          <p className="mt-1 text-2xl font-extrabold tracking-tight">
+            {todayTaskCount} task{overdueTaskCount > 0 ? `, ${overdueTaskCount} telat` : ""}
+          </p>
+          <p className="mt-3 text-xs text-white/85">Tap buat lihat agenda lengkap</p>
         </Link>
       </section>
 
