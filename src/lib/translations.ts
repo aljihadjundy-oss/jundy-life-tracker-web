@@ -216,6 +216,36 @@ const id: Record<string, string> = {
   "badge.habit_50": "50 Habit Dicentang",
   "badge.journal_10": "10 Tulisan",
   "badge.post_20": "20 Konten Tayang",
+
+  // YouTube
+  "youtube.title": "YouTube",
+  "youtube.noKey": "Statistik YouTube belum aktif — isi NEXT_PUBLIC_YOUTUBE_API_KEY dulu (lihat README).",
+  "youtube.connectHint": "Masukkan handle channel kamu (mis. @jundy) buat narik statistiknya otomatis.",
+  "youtube.connect": "Hubungkan",
+  "youtube.disconnect": "Lepas",
+  "youtube.subscribers": "Subscriber",
+  "youtube.views": "Total View",
+  "youtube.videoCount": "{count} video",
+
+  // CSV import
+  "import.button": "Import",
+  "import.title": "Import Mutasi",
+  "import.hint": "Export mutasi rekening dari m-banking kamu dalam format CSV, lalu unggah di sini. Kolomnya bisa kamu cocokkan sendiri, jadi format bank mana pun bisa dipakai.",
+  "import.chooseFile": "Pilih file CSV",
+  "import.emptyFile": "File-nya kosong atau bukan CSV yang valid.",
+  "import.readFailed": "Gagal membaca file.",
+  "import.hasHeader": "Baris pertama adalah judul kolom",
+  "import.mapColumns": "Cocokkan Kolom",
+  "import.none": "— tidak ada —",
+  "import.field.date": "Tanggal",
+  "import.field.description": "Keterangan",
+  "import.field.amount": "Jumlah",
+  "import.field.debit": "Debit",
+  "import.field.credit": "Kredit",
+  "import.category": "Kategori untuk semua",
+  "import.preview": "Pratinjau — {valid} dari {total} baris siap diimpor",
+  "import.andMore": "...dan {count} baris lagi",
+  "import.confirm": "Impor {count} Transaksi",
 };
 
 const en: Record<string, string> = {
@@ -429,6 +459,36 @@ const en: Record<string, string> = {
   "badge.habit_50": "50 Habits Checked",
   "badge.journal_10": "10 Entries",
   "badge.post_20": "20 Posts Published",
+
+  // YouTube
+  "youtube.title": "YouTube",
+  "youtube.noKey": "YouTube stats aren't set up — add NEXT_PUBLIC_YOUTUBE_API_KEY first (see README).",
+  "youtube.connectHint": "Enter your channel handle (e.g. @jundy) to pull stats automatically.",
+  "youtube.connect": "Connect",
+  "youtube.disconnect": "Disconnect",
+  "youtube.subscribers": "Subscribers",
+  "youtube.views": "Total Views",
+  "youtube.videoCount": "{count} videos",
+
+  // CSV import
+  "import.button": "Import",
+  "import.title": "Import Statement",
+  "import.hint": "Export your bank statement as CSV from your banking app, then upload it here. You map the columns yourself, so any bank's format works.",
+  "import.chooseFile": "Choose CSV file",
+  "import.emptyFile": "The file is empty or not valid CSV.",
+  "import.readFailed": "Couldn't read the file.",
+  "import.hasHeader": "First row contains column titles",
+  "import.mapColumns": "Map Columns",
+  "import.none": "— none —",
+  "import.field.date": "Date",
+  "import.field.description": "Description",
+  "import.field.amount": "Amount",
+  "import.field.debit": "Debit",
+  "import.field.credit": "Credit",
+  "import.category": "Category for all",
+  "import.preview": "Preview — {valid} of {total} rows ready",
+  "import.andMore": "...and {count} more rows",
+  "import.confirm": "Import {count} Transactions",
 };
 
 export const translations: Record<Lang, Record<string, string>> = { id, en };

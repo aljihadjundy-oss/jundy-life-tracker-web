@@ -14,6 +14,7 @@ import ContentForm from "./components/ContentForm";
 import { useT } from "@/lib/i18n";
 import { awardXp } from "@/lib/gamification";
 import { celebrate } from "@/lib/celebrate";
+import YouTubeCard from "./components/YouTubeCard";
 
 export default function BrandingPage() {
   return (
@@ -94,6 +95,8 @@ function BrandingContent() {
       <TopBar title={t("branding.title")} subtitle={t("branding.subtitle")} />
 
       <ConsistencyCard streak={streak} postsThisWeek={postsThisWeek} last14Days={last14Days} />
+
+      {user && <YouTubeCard uid={user.uid} />}
 
       <div className="mt-5 flex items-center justify-between px-5">
         <h2 className="text-sm font-bold text-ink">{t("branding.contentCalendar")}</h2>

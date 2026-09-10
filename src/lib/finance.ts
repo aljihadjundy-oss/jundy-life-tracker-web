@@ -9,6 +9,7 @@ import {
   setDoc,
   serverTimestamp,
   Timestamp,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { NewTransaction, Transaction } from "@/types/finance";
@@ -49,6 +50,18 @@ export async function addTransaction(uid: string, transaction: NewTransaction) {
     ...transaction,
     createdAt: serverTimestamp(),
   });
+}
+
+/** Firestore caps a batch at 500 writes, so imports are chunked. */
+export async function addTransactionsBatch(uid: string, transactions: NewTransaction[]) {
+  const ref = transactionsRef(uid);
+  for (let i = 0; i < transactions.length; i += 400) {
+    const batch = writeBatch(db);
+    for (const transaction of transactions.slice(i, i + 400)) {
+      batch.set(doc(ref), { ...transaction, createdAt: serverTimestamp() });
+    }
+    await batch.commit();
+  }
 }
 
 export async function deleteTransaction(uid: string, id: string) {

@@ -1,13 +1,14 @@
 # Jundy Life Tracker
 
 Personal life tracker — mobile-first PWA. 5 modul, semua jalan end-to-end (auth → input → Firestore → tampil di UI):
-**Keuangan**, **Waktu**, **Branding**, **Kesehatan**, **Jurnal** — plus reminder push notification harian.
+**Keuangan**, **Waktu**, **Branding**, **Kesehatan**, **Jurnal** — plus gamifikasi ala Duolingo (XP, level, streak, lencana), dwibahasa Indonesia/English, dan reminder push notification harian.
 
 ## Tech Stack
 
 - Next.js (App Router, static export) + Tailwind CSS v4
 - Firebase Auth (Google Sign-In, single-user lock) + Firestore
 - Firebase Cloud Messaging (push notification) + Cloud Functions (reminder terjadwal)
+- Dwibahasa (ID/EN) lewat kamus terjemahan sendiri, tanpa dependensi i18n
 - PWA: manifest.json + custom service worker (`public/sw.js`)
 - Firebase Hosting
 
@@ -42,6 +43,29 @@ Fitur reminder (notif "masih ada task/habit yang belum kelar") butuh dua bagian:
 5. Buka app → **Pengaturan** → tap "Aktifkan Notifikasi" (izinin notifikasi di browser) → toggle reminder harian, atur jam-nya.
 
 Catatan: push notification butuh HTTPS (otomatis di Firebase Hosting) — gak jalan di `localhost` biasa kecuali browser mendukung eksepsi buat localhost.
+
+
+## Fitur Tambahan
+
+### Gamifikasi
+
+Tiap aksi produktif memberi XP — catat transaksi (5), kelarkan task (15), centang habit (10), tulis jurnal (20), tayangkan konten (25). XP menaikkan level, dan XP harian dibandingkan dengan target harian (diatur di Pengaturan) untuk membentuk streak. Ada 11 lencana yang terbuka otomatis saat syaratnya terpenuhi. Semua tersimpan di `users/{uid}/gamification/stats`.
+
+### Import Mutasi Rekening (CSV)
+
+Tidak ada API bank untuk perorangan di Indonesia — semua penyedia open banking (Brick, Ayoconnect, Finantier) bersifat B2B berbayar. Sebagai gantinya, modul Keuangan menerima **export CSV dari m-banking**: tombol "Import" di halaman Keuangan → pilih file → cocokkan kolom (tanggal, keterangan, debit/kredit atau jumlah) → pratinjau → impor massal.
+
+Parser-nya mengenali pemisah `,` `;` tab dan `|`, format angka Indonesia (`1.250.500,00`) maupun Inggris (`1,250,500.00`), serta tanggal `dd/mm/yyyy`, `yyyy-mm-dd`, dan `dd-mm-yy`. Baris tanpa tanggal atau nominal valid ditandai dan dilewati.
+
+### Statistik YouTube
+
+Modul Branding bisa menarik statistik channel (subscriber, total view, jumlah video, 3 video terbaru) memakai **API key saja**, tanpa OAuth dan tanpa backend. Setup:
+
+1. Google Cloud Console → APIs & Services → aktifkan **YouTube Data API v3**
+2. Buat API key, lalu **batasi**: Application restrictions = HTTP referrers (isi domain Hosting kamu), API restrictions = YouTube Data API v3 saja. Key ini terkirim ke browser, jadi pembatasan inilah pengamannya.
+3. Isi `NEXT_PUBLIC_YOUTUBE_API_KEY` di `.env.local`, build ulang, lalu hubungkan handle channel dari halaman Branding.
+
+Instagram, Threads, dan TikTok sengaja tidak diintegrasikan: ketiganya butuh akun Business/Creator, backend untuk menyimpan client secret, dan App Review (Meta 2-4 minggu, TikTok 3-7 hari).
 
 ## Deploy ke Firebase Hosting
 
@@ -96,6 +120,8 @@ users/{uid}/habitLogs/{date_habitId} → { habitId, date }
 users/{uid}/metrics/{date}        → { date, sleepHours, exerciseMinutes, waterGlasses }
 users/{uid}/journal/{id}          → { title, content, mood, date, createdAt, updatedAt }
 users/{uid}/settings/notifications → { enabled, reminderTime, fcmTokens: [...] }
+users/{uid}/settings/branding     → { youtubeChannel }
+users/{uid}/gamification/stats    → { totalXp, dailyGoal, xpByDate, unlockedBadges, counters }
 ```
 
 ## Kenapa gak ada reminder ke WhatsApp?

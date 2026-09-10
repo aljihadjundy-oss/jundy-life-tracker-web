@@ -6,6 +6,7 @@ import TopBar from "@/components/TopBar";
 import { useAuth } from "@/lib/auth-context";
 import {
   addTransaction,
+  addTransactionsBatch,
   deleteTransaction,
   setMonthlyBudget,
   subscribeMonthlyBudget,
@@ -20,6 +21,7 @@ import BalanceCard from "./components/BalanceCard";
 import { useT } from "@/lib/i18n";
 import { awardXp } from "@/lib/gamification";
 import { celebrate } from "@/lib/celebrate";
+import ImportSheet from "./components/ImportSheet";
 
 export default function KeuanganPage() {
   return (
@@ -36,6 +38,7 @@ function KeuanganContent() {
   const [monthlyBudget, setMonthlyBudgetState] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [showBudgetSheet, setShowBudgetSheet] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -75,6 +78,12 @@ function KeuanganContent() {
     await deleteTransaction(user.uid, id);
   }
 
+  async function handleImport(imported: NewTransaction[]) {
+    if (!user) return;
+    await addTransactionsBatch(user.uid, imported);
+    celebrate(await awardXp(user.uid, "transaction"));
+  }
+
   async function handleBudget(amount: number) {
     if (!user) return;
     await setMonthlyBudget(user.uid, amount);
@@ -95,12 +104,20 @@ function KeuanganContent() {
 
       <div className="mt-6 flex items-center justify-between px-5">
         <h2 className="text-sm font-bold text-ink">{t("finance.recentTransactions")}</h2>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-1 rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
-        >
-          {t("app.add")}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setShowImport(true)}
+            className="rounded-full bg-surface-raised px-3.5 py-2 text-xs font-bold text-ink-muted transition active:scale-95"
+          >
+            {t("import.button")}
+          </button>
+          <button
+            onClick={() => setShowForm(true)}
+            className="rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
+          >
+            {t("app.add")}
+          </button>
+        </div>
       </div>
 
       <div className="mt-3 flex flex-col gap-2.5 px-5 pb-6">
@@ -123,6 +140,9 @@ function KeuanganContent() {
 
       {showForm && (
         <TransactionForm onSubmit={handleAdd} onClose={() => setShowForm(false)} />
+      )}
+      {showImport && (
+        <ImportSheet onImport={handleImport} onClose={() => setShowImport(false)} />
       )}
       {showBudgetSheet && (
         <BudgetSheet
