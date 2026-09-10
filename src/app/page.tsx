@@ -7,14 +7,16 @@ import TopBar from "@/components/TopBar";
 import { useAuth } from "@/lib/auth-context";
 import { subscribeTransactions } from "@/lib/finance";
 import { subscribeTasks } from "@/lib/waktu";
+import { subscribeContent } from "@/lib/branding";
 import type { Transaction } from "@/types/finance";
 import type { Task } from "@/types/waktu";
-import { formatCurrency, currentMonthKey, todayISO } from "@/lib/format";
+import type { ContentItem } from "@/types/branding";
+import { formatCurrency, currentMonthKey, todayISO, addDaysISO } from "@/lib/format";
 
 const MODULES = [
   { href: "/keuangan", label: "Keuangan", emoji: "💰", gradient: "from-emerald-400 to-teal-500", live: true },
   { href: "/waktu", label: "Waktu", emoji: "🗓️", gradient: "from-blue-400 to-indigo-500", live: true },
-  { href: "/branding", label: "Branding", emoji: "✨", gradient: "from-pink-400 to-fuchsia-500", live: false },
+  { href: "/branding", label: "Branding", emoji: "✨", gradient: "from-pink-400 to-fuchsia-500", live: true },
   { href: "/kesehatan", label: "Kesehatan", emoji: "❤️", gradient: "from-orange-400 to-red-500", live: false },
 ] as const;
 
@@ -30,14 +32,17 @@ function DashboardContent() {
   const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [content, setContent] = useState<ContentItem[]>([]);
 
   useEffect(() => {
     if (!user) return;
     const unsubTx = subscribeTransactions(user.uid, setTransactions);
     const unsubTasks = subscribeTasks(user.uid, setTasks);
+    const unsubContent = subscribeContent(user.uid, setContent);
     return () => {
       unsubTx();
       unsubTasks();
+      unsubContent();
     };
   }, [user]);
 
@@ -65,6 +70,18 @@ function DashboardContent() {
     }
     return { todayTaskCount, overdueTaskCount };
   }, [tasks]);
+
+  const streak = useMemo(() => {
+    const postedDates = new Set(content.filter((c) => c.status === "posted").map((c) => c.postDate));
+    const today = todayISO();
+    let streak = 0;
+    for (let i = 0; ; i++) {
+      const date = addDaysISO(today, -i);
+      if (postedDates.has(date)) streak++;
+      else break;
+    }
+    return streak;
+  }, [content]);
 
   const firstName = user?.displayName?.split(" ")[0] ?? "";
 
@@ -108,6 +125,17 @@ function DashboardContent() {
             {todayTaskCount} task{overdueTaskCount > 0 ? `, ${overdueTaskCount} telat` : ""}
           </p>
           <p className="mt-3 text-xs text-white/85">Tap buat lihat agenda lengkap</p>
+        </Link>
+
+        <Link
+          href="/branding"
+          className="block rounded-3xl bg-gradient-to-br from-fuchsia-500 via-pink-500 to-rose-400 p-5 text-white shadow-lg shadow-pink-500/20 transition active:scale-[0.98]"
+        >
+          <p className="text-xs font-medium text-white/80">Konsistensi Posting</p>
+          <p className="mt-1 text-2xl font-extrabold tracking-tight">
+            {streak > 0 ? `🔥 ${streak} hari beruntun` : "Belum ada streak"}
+          </p>
+          <p className="mt-3 text-xs text-white/85">Tap buat lihat content calendar</p>
         </Link>
       </section>
 
