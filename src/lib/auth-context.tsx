@@ -9,8 +9,9 @@ import {
 } from "react";
 import {
   GoogleAuthProvider,
+  getRedirectResult,
   onAuthStateChanged,
-  signInWithPopup,
+  signInWithRedirect,
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
@@ -45,11 +46,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return unsubscribe;
   }, []);
 
+  // Surfaces errors from the redirect sign-in flow once we land back here.
+  useEffect(() => {
+    getRedirectResult(auth).catch((err: unknown) => {
+      setError(err instanceof Error ? err.message : "Gagal login, coba lagi.");
+    });
+  }, []);
+
   async function signInWithGoogle() {
     setError(null);
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      // Redirect instead of popup: popups are unreliable in installed PWAs
+      // (standalone display mode) and in browsers blocking third-party storage.
+      await signInWithRedirect(auth, new GoogleAuthProvider());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Gagal login, coba lagi.");
     }

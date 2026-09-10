@@ -17,6 +17,8 @@ Personal life tracker — mobile-first PWA. 5 modul, semua jalan end-to-end (aut
 2. Aktifin **Authentication → Sign-in method → Google**.
 3. Aktifin **Firestore Database** (mode production, region terdekat).
 4. Copy `.env.local.example` jadi `.env.local`, isi semua `NEXT_PUBLIC_FIREBASE_*` dari config Web App lo. `NEXT_PUBLIC_OWNER_EMAIL` udah default ke email lo — cuma akun ini yang bisa login.
+
+   > **Penting soal `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`:** isi dengan domain Hosting (`<project-id>.web.app`), **bukan** `<project-id>.firebaseapp.com` yang dikasih Firebase Console. Login Google butuh `authDomain` satu origin dengan app-nya. Kalau beda origin, browser yang memblokir cookie/storage pihak ketiga (Chrome, apalagi mode incognito) bikin konteks login gagal baca konfigurasinya sendiri, dan errornya menyesatkan: `auth/api-key-not-valid` padahal API key-nya benar.
 5. `npm install`
 6. `npm run dev` → buka `http://localhost:3000`
 
