@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --surface: #ffffff;
+  --surface-card: #ffffff;
+  --surface-raised: #f7f7f8;
+  --ink: #0a0a0a;
+  --ink-muted: #6b7280;
+  --border: #e5e7eb;
+
+  --brand-start: #833ab4;
+  --brand-mid: #fd1d1d;
+  --brand-end: #fcaf45;
+
+  --accent-finance: #10b981;
+  --accent-time: #3b82f6;
+  --accent-branding: #ec4899;
+  --accent-health: #f97316;
+}
+
+.dark {
+  --surface: #0a0a0a;
+  --surface-card: #161616;
+  --surface-raised: #1f1f1f;
+  --ink: #fafafa;
+  --ink-muted: #9ca3af;
+  --border: #2a2a2a;
+}
+
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-card: var(--surface-card);
+  --color-surface-raised: var(--surface-raised);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-border: var(--border);
+
+  --color-brand-start: var(--brand-start);
+  --color-brand-mid: var(--brand-mid);
+  --color-brand-end: var(--brand-end);
+
+  --color-accent-finance: var(--accent-finance);
+  --color-accent-time: var(--accent-time);
+  --color-accent-branding: var(--accent-branding);
+  --color-accent-health: var(--accent-health);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
