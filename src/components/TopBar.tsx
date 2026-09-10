@@ -1,9 +1,18 @@
 "use client";
 
+import type { ReactNode } from "react";
 import ThemeToggle from "./ThemeToggle";
 import { useAuth } from "@/lib/auth-context";
 
-export default function TopBar({ title, subtitle }: { title: string; subtitle?: string }) {
+export default function TopBar({
+  title,
+  subtitle,
+  extra,
+}: {
+  title: string;
+  subtitle?: string;
+  extra?: ReactNode;
+}) {
   const { signOut } = useAuth();
 
   return (
@@ -13,6 +22,7 @@ export default function TopBar({ title, subtitle }: { title: string; subtitle?: 
         {subtitle && <p className="text-sm text-ink-muted">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-2">
+        {extra}
         <ThemeToggle />
         <button
           onClick={signOut}

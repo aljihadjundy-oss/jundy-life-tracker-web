@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import TopBar from "@/components/TopBar";
+import SettingsLink from "@/components/SettingsLink";
 import { useAuth } from "@/lib/auth-context";
 import { subscribeTransactions } from "@/lib/finance";
 import { subscribeTasks } from "@/lib/waktu";
@@ -119,7 +120,11 @@ function DashboardContent() {
 
   return (
     <>
-      <TopBar title={`Halo, ${firstName || "Jundy"} 👋`} subtitle="Ini ringkasan hari ini" />
+      <TopBar
+        title={`Halo, ${firstName || "Jundy"} 👋`}
+        subtitle="Ini ringkasan hari ini"
+        extra={<SettingsLink />}
+      />
 
       <section className="mt-2 px-5">
         <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2">

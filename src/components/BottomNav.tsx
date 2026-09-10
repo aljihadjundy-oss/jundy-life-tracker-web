@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/waktu", label: "Waktu", icon: CalendarIcon },
   { href: "/branding", label: "Branding", icon: SparkIcon },
   { href: "/kesehatan", label: "Sehat", icon: HeartIcon },
+  { href: "/jurnal", label: "Jurnal", icon: PenIcon },
 ] as const;
 
 export default function BottomNav() {
@@ -16,7 +17,7 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/90 backdrop-blur-lg">
-      <div className="mx-auto flex max-w-md items-center justify-between px-4 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
+      <div className="mx-auto flex max-w-md items-center justify-between px-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
         {NAV_ITEMS.map((item) => {
           const active = pathname === item.href;
           const Icon = item.icon;
@@ -85,6 +86,15 @@ function HeartIcon({ className, strokeWidth }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
       <path d="M12 20s-7-4.4-9.5-8.8C.8 7.8 2.6 4.5 6 4a5 5 0 0 1 6 2 5 5 0 0 1 6-2c3.4.5 5.2 3.8 3.5 7.2C19 15.6 12 20 12 20z" />
+    </svg>
+  );
+}
+
+function PenIcon({ className, strokeWidth }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
     </svg>
   );
 }

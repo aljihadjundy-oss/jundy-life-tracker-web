@@ -1,6 +1,40 @@
 const CACHE_VERSION = "v1";
 const CACHE_NAME = `life-tracker-${CACHE_VERSION}`;
 
+// --- Firebase Cloud Messaging (push notifications) ---
+// Config arrives via the registration URL's query string (see
+// components/RegisterSW.tsx) since this static file has no build-time env
+// substitution. Firebase web config is public, not secret, so this is safe.
+(function setupMessaging() {
+  const params = new URLSearchParams(self.location.search);
+  const encoded = params.get("firebaseConfig");
+  if (!encoded) return;
+
+  let firebaseConfig;
+  try {
+    firebaseConfig = JSON.parse(atob(encoded));
+  } catch {
+    return;
+  }
+  if (!firebaseConfig.apiKey) return;
+
+  importScripts("https://www.gstatic.com/firebasejs/12.19.0/firebase-app-compat.js");
+  importScripts("https://www.gstatic.com/firebasejs/12.19.0/firebase-messaging-compat.js");
+
+  firebase.initializeApp(firebaseConfig);
+  const messaging = firebase.messaging();
+
+  messaging.onBackgroundMessage((payload) => {
+    const title = payload.notification?.title ?? "Life Tracker";
+    const options = {
+      body: payload.notification?.body ?? "",
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+    };
+    self.registration.showNotification(title, options);
+  });
+})();
+
 const PRECACHE_URLS = [
   "/",
   "/manifest.json",
@@ -22,6 +56,18 @@ self.addEventListener("activate", (event) => {
         Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
       )
       .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientsList) => {
+      for (const client of clientsList) {
+        if ("focus" in client) return client.focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow("/");
+    })
   );
 });
 

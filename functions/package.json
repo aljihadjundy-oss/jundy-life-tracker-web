@@ -1,0 +1,16 @@
+{
+  "name": "functions",
+  "description": "Scheduled reminder push notifications for Jundy Life Tracker",
+  "private": true,
+  "engines": {
+    "node": "20"
+  },
+  "main": "index.js",
+  "scripts": {
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.3.0"
+  }
+}
