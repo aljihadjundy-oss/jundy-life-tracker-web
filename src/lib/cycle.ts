@@ -114,7 +114,8 @@ const BANK: Record<string, Suggestion[]> = {
     { id: "shoulderStretch", minutes: 10 },
     { id: "pelvicFloor", minutes: 12 },
   ],
-  // No cycle to adapt to, so this is a plain balanced week.
+  // Only reached when the user has picked no preferred types; otherwise the
+  // no-cycle mode builds its list from TYPE_SESSION below.
   none: [
     { id: "strength", minutes: 35 },
     { id: "briskWalk", minutes: 30 },
@@ -122,11 +123,48 @@ const BANK: Record<string, Suggestion[]> = {
   ],
 };
 
+/**
+ * One default session per exercise type. With no cycle to adapt to there is
+ * nothing to tailor suggestions against except what the user said they
+ * actually like doing — so that is what gets used.
+ */
+const TYPE_SESSION: Record<string, Suggestion> = {
+  gym: { id: "gymSession", minutes: 60 },
+  calisthenics: { id: "calisthenics", minutes: 30 },
+  weights: { id: "weights", minutes: 40 },
+  running: { id: "run", minutes: 30 },
+  cycling: { id: "ride", minutes: 40 },
+  swimming: { id: "swim", minutes: 30 },
+  futsal: { id: "futsal", minutes: 60 },
+  basketball: { id: "basketball", minutes: 60 },
+  badminton: { id: "badminton", minutes: 45 },
+  boxing: { id: "boxing", minutes: 40 },
+  martialArts: { id: "martialArts", minutes: 60 },
+  hiking: { id: "hiking", minutes: 90 },
+  walking: { id: "briskWalk", minutes: 30 },
+  yoga: { id: "slowFlowYoga", minutes: 25 },
+  pilates: { id: "pilates", minutes: 30 },
+  zumba: { id: "zumba", minutes: 40 },
+};
+
 export function suggestions(
   mode: BodyMode,
   phase: CyclePhase,
   prefs: ExercisePrefs
 ): Suggestion[] {
+  // Without a cycle, preference is the only signal worth adapting to.
+  if (mode === "none" && prefs.types.length > 0) {
+    const picked = prefs.types
+      .map((type) => TYPE_SESSION[type])
+      .filter((session): session is Suggestion => Boolean(session))
+      .slice(0, 3);
+    if (picked.length > 0) {
+      return prefs.level === "beginner"
+        ? picked.map((s) => ({ ...s, minutes: Math.max(15, Math.round(s.minutes * 0.7)) }))
+        : picked;
+    }
+  }
+
   const key = mode === "cycle" ? phase : mode;
   let list = BANK[key] ?? BANK.none;
   if (prefs.level === "beginner") {

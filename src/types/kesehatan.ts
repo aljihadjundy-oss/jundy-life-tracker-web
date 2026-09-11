@@ -99,14 +99,22 @@ export const PERIOD_LENGTH_OPTIONS = [3, 4, 5, 6, 7, 8];
 export const WATER_TARGET_OPTIONS = [6, 8, 10, 12];
 
 export const EXERCISE_TYPES = [
-  "yoga",
-  "walking",
-  "running",
+  "gym",
+  "calisthenics",
   "weights",
+  "running",
+  "cycling",
+  "swimming",
+  "futsal",
+  "basketball",
+  "badminton",
+  "boxing",
+  "martialArts",
+  "hiking",
+  "walking",
+  "yoga",
   "pilates",
   "zumba",
-  "swimming",
-  "cycling",
 ];
 
 export const MOODS = ["calm", "happy", "neutral", "anxious", "sad", "irritable"];

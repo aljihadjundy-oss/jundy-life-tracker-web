@@ -44,7 +44,7 @@ import {
   type NewTransaction,
   type Transaction,
 } from "@/types/finance";
-import { accountBalance, budgetLines, goalsByProgress } from "@/lib/money";
+import { accountBalance, budgetLines, goalsByProgress, unassignedTransactions } from "@/lib/money";
 import { addMonths, currentMonthKey, formatMonth } from "@/lib/format";
 import TransactionCard from "./components/TransactionCard";
 import TransactionForm from "./components/TransactionForm";
@@ -133,6 +133,7 @@ function KeuanganContent() {
     [monthBudgets, transactions]
   );
   const goalRows = useMemo(() => goalsByProgress(goals), [goals]);
+  const orphans = useMemo(() => unassignedTransactions(transactions), [transactions]);
 
   const uid = user?.uid;
 
@@ -314,6 +315,20 @@ function KeuanganContent() {
                   />
                 ))
               ))}
+
+            {tab === "accounts" && orphans.length > 0 && (
+              <button
+                onClick={() => goTo("transactions")}
+                className="rounded-2xl bg-amber-500/10 p-4 text-left"
+              >
+                <p className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                  {t("money.unassigned", { count: orphans.length })}
+                </p>
+                <p className="mt-1 text-[11px] leading-relaxed text-ink-muted">
+                  {t("money.unassignedHint")}
+                </p>
+              </button>
+            )}
 
             {tab === "accounts" &&
               (accounts.length === 0 ? (

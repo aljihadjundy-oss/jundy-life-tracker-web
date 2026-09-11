@@ -1,3 +1,4 @@
+import { addDaysISO, todayISO } from "./format";
 import {
   BOTTLENECK_DAYS,
   isOpen,
@@ -17,9 +18,30 @@ export function applyScope(tasks: Task[], scope: TaskScope) {
   return tasks;
 }
 
+/** True when a task's due date falls inside the chosen range. */
+function inDueRange(task: Task, filters: TaskFilters, today: string) {
+  switch (filters.dueRange) {
+    case "overdue":
+      return isOpen(task.status) && task.dueDate < today;
+    case "today":
+      return task.dueDate === today;
+    case "tomorrow":
+      return task.dueDate === addDaysISO(today, 1);
+    case "week":
+      // Today through the next six days — the week you can still act on.
+      return task.dueDate >= today && task.dueDate <= addDaysISO(today, 6);
+    case "date":
+      return filters.date === "" || task.dueDate === filters.date;
+    default:
+      return true;
+  }
+}
+
 export function applyFilters(tasks: Task[], filters: TaskFilters) {
   const search = filters.search.trim().toLowerCase();
+  const today = todayISO();
   return tasks.filter((task) => {
+    if (!inDueRange(task, filters, today)) return false;
     if (filters.category && task.category !== filters.category) return false;
     if (filters.unit && task.unit !== filters.unit) return false;
     if (filters.status && task.status !== filters.status) return false;

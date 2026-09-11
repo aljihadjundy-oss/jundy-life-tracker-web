@@ -41,6 +41,7 @@ import OpsStatsRow from "./components/OpsStatsRow";
 import QuickAdd from "./components/QuickAdd";
 import FilterSheet from "./components/FilterSheet";
 import GroupHeader from "./components/GroupHeader";
+import DueFilterRow from "./components/DueFilterRow";
 import BulkStatusPicker from "./components/BulkStatusPicker";
 import OverviewSheet from "./components/OverviewSheet";
 import StrikeSheet from "./components/StrikeSheet";
@@ -292,6 +293,10 @@ function WaktuContent() {
                 {t(`ops.scope.${s}`)}
               </button>
             ))}
+          </div>
+
+          <div className="mt-2.5">
+            <DueFilterRow filters={filters} onChange={setFilters} />
           </div>
 
           <div className="mt-2.5 flex items-center gap-2 px-5">

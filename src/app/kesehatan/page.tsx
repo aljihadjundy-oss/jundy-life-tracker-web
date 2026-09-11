@@ -26,12 +26,11 @@ import {
   type HealthSettings,
   type NewHabit,
 } from "@/types/kesehatan";
-import { cycleInfo, suggestions, waterTarget } from "@/lib/cycle";
+import { cycleInfo, sleepHours, suggestions, waterTarget } from "@/lib/cycle";
 import { addDaysISO, currentMonthKey, todayISO } from "@/lib/format";
 import HealthSummaryCard from "./components/HealthSummaryCard";
 import DayPicker from "./components/DayPicker";
-import MetricsCard from "./components/MetricsCard";
-import MetricsForm from "./components/MetricsForm";
+import DaySummaryCard from "./components/DaySummaryCard";
 import HabitCard from "./components/HabitCard";
 import HabitForm from "./components/HabitForm";
 import BodyModeCard from "./components/BodyModeCard";
@@ -76,7 +75,6 @@ function KesehatanContent() {
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const [monthKey, setMonthKey] = useState(currentMonthKey());
   const [showHabitForm, setShowHabitForm] = useState(false);
-  const [showMetricsForm, setShowMetricsForm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const selection = useSelection();
 
@@ -209,11 +207,6 @@ function KesehatanContent() {
     if (next) celebrate(await awardXp(user.uid, "habit"));
   }
 
-  async function handleSaveMetrics(date: string, patch: Partial<DailyMetrics>) {
-    if (!user) return;
-    await patchMetrics(user.uid, date, patch);
-  }
-
   async function handleSaveSettings(patch: Partial<HealthSettings>) {
     if (!user) return;
     await saveHealthSettings(user.uid, patch);
@@ -259,13 +252,15 @@ function KesehatanContent() {
       {tab === "today" && (
         <div className="mt-4 flex flex-col gap-4 pb-6">
           <HealthSummaryCard streak={streak} doneToday={doneToday} totalHabits={habits.length} />
-          <EnergyMoodCard
-            energy={todayMetrics.energy}
-            mood={todayMetrics.mood}
-            week={energyWeek}
-            onEnergy={(energy) => patchToday({ energy })}
-            onMood={(mood) => patchToday({ mood })}
-          />
+          {tracksCycle && (
+            <EnergyMoodCard
+              energy={todayMetrics.energy}
+              mood={todayMetrics.mood}
+              week={energyWeek}
+              onEnergy={(energy) => patchToday({ energy })}
+              onMood={(mood) => patchToday({ mood })}
+            />
+          )}
           <WaterCard
             glasses={todayMetrics.waterGlasses}
             target={target}
@@ -285,19 +280,28 @@ function KesehatanContent() {
           <SleepCard
             bedtime={settings.bedtime}
             wakeTime={settings.wakeTime}
-            onChange={(patch) => void handleSaveSettings(patch)}
+            onChange={(patch) => {
+              const bedtime = patch.bedtime ?? settings.bedtime;
+              const wakeTime = patch.wakeTime ?? settings.wakeTime;
+              void handleSaveSettings(patch);
+              // Keep the schedule (which drives the reminder) and the day's
+              // actual hours in step, so it is only ever entered once.
+              patchToday({ sleepHours: sleepHours(bedtime, wakeTime) });
+            }}
           />
-          <SymptomsCard
-            mode={bodyMode}
-            selected={todayMetrics.symptoms}
-            onToggle={(symptom) =>
-              patchToday({
-                symptoms: todayMetrics.symptoms.includes(symptom)
-                  ? todayMetrics.symptoms.filter((x) => x !== symptom)
-                  : [...todayMetrics.symptoms, symptom],
-              })
-            }
-          />
+          {tracksCycle && (
+            <SymptomsCard
+              mode={bodyMode}
+              selected={todayMetrics.symptoms}
+              onToggle={(symptom) =>
+                patchToday({
+                  symptoms: todayMetrics.symptoms.includes(symptom)
+                    ? todayMetrics.symptoms.filter((x) => x !== symptom)
+                    : [...todayMetrics.symptoms, symptom],
+                })
+              }
+            />
+          )}
         </div>
       )}
 
@@ -332,7 +336,12 @@ function KesehatanContent() {
           </div>
 
           <div className="mt-1">
-            <MetricsCard metrics={selectedMetrics} onEdit={() => setShowMetricsForm(true)} />
+            <DaySummaryCard
+              metrics={selectedMetrics}
+              settings={effectiveSettings}
+              waterTarget={target}
+              showWellbeing={tracksCycle}
+            />
           </div>
 
           <div className="mt-5 flex items-center justify-between px-5">
@@ -390,14 +399,6 @@ function KesehatanContent() {
       )}
 
       {showHabitForm && <HabitForm onSubmit={handleAddHabit} onClose={() => setShowHabitForm(false)} />}
-      {showMetricsForm && (
-        <MetricsForm
-          date={selectedDate}
-          initial={selectedMetrics}
-          onSubmit={handleSaveMetrics}
-          onClose={() => setShowMetricsForm(false)}
-        />
-      )}
       {showSettings && (
         <HealthSettingsSheet
           settings={effectiveSettings}

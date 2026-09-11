@@ -34,8 +34,11 @@ export function monthOf(isoDate: string) {
 export function accountBalance(account: Account, transactions: Transaction[]) {
   let balance = account.openingBalance;
   for (const tx of transactions) {
-    // Anything dated on or before the count is already inside openingBalance.
-    if (account.asOf && tx.date <= account.asOf) continue;
+    // openingBalance is the balance at the START of asOf, so a transaction
+    // dated on that day still counts. Excluding it — which is what `<=` did —
+    // meant an account created today never moved for anything logged today,
+    // which is exactly when a new account gets its first transactions.
+    if (account.asOf && tx.date < account.asOf) continue;
     if (tx.status === "pending") continue;
 
     if (tx.accountId === account.id) {
@@ -227,4 +230,9 @@ export function needWantSplit(transactions: Transaction[], month: string) {
     else untagged += tx.amount;
   }
   return { need, want, untagged, total: need + want + untagged };
+}
+
+/** Transactions not filed under any account — they never reach a balance. */
+export function unassignedTransactions(transactions: Transaction[]) {
+  return transactions.filter((tx) => tx.accountId === "");
 }

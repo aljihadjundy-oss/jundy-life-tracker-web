@@ -117,12 +117,23 @@ export type TaskScope = "open" | "all" | "done";
 
 export const SCOPE_ORDER: TaskScope[] = ["open", "all", "done"];
 
+/**
+ * Date filter for the list. "date" pins one specific day; the rest are the
+ * ranges people actually ask for out loud.
+ */
+export type DueRange = "all" | "overdue" | "today" | "tomorrow" | "week" | "date";
+
+export const DUE_RANGES: DueRange[] = ["all", "overdue", "today", "tomorrow", "week", "date"];
+
 export type TaskFilters = {
   category: TaskCategory | "";
   unit: string;
   status: TaskStatus | "";
   owner: string;
   search: string;
+  dueRange: DueRange;
+  /** The pinned day, only read when dueRange is "date". */
+  date: string;
 };
 
 export const EMPTY_FILTERS: TaskFilters = {
@@ -131,8 +142,16 @@ export const EMPTY_FILTERS: TaskFilters = {
   status: "",
   owner: "",
   search: "",
+  dueRange: "all",
+  date: "",
 };
 
 export function hasActiveFilter(filters: TaskFilters) {
-  return Object.values(filters).some((value) => value !== "");
+  return (
+    filters.category !== "" ||
+    filters.unit !== "" ||
+    filters.status !== "" ||
+    filters.owner !== "" ||
+    filters.dueRange !== "all"
+  );
 }

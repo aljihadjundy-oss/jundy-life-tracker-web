@@ -166,6 +166,12 @@ export default function TransactionForm({
         </Field>
       )}
 
+      {accounts.length > 0 && accountId === "" && (
+        <p className="-mt-2 mb-4 rounded-xl bg-amber-500/10 px-3 py-2.5 text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+          {t("money.noAccountWarning")}
+        </p>
+      )}
+
       {type === "transfer" && accounts.length > 0 && (
         <Field label={t("money.toAccount")}>
           <select
