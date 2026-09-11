@@ -20,15 +20,18 @@ const Globe = dynamic(() => import("@/components/ui/globe"), { ssr: false });
  * The markers are decoration, not data: this app tracks nothing geographic,
  * so they are scattered rather than claiming to mean anything.
  */
+// Ukuran marker di cobe relatif terhadap bola, jadi begitu bolanya dibesarkan
+// markernya ikut membesar dalam piksel. Angka di bawah sudah dikecilkan agar
+// tetap terbaca sebagai titik kota, bukan noda.
 const GLOBE_CONFIG = {
   markers: [
-    { location: [-6.2088, 106.8456] as [number, number], size: 0.09 },
-    { location: [-3.6954, 128.1814] as [number, number], size: 0.05 },
-    { location: [-7.2575, 112.7521] as [number, number], size: 0.05 },
-    { location: [1.3521, 103.8198] as [number, number], size: 0.04 },
-    { location: [35.6762, 139.6503] as [number, number], size: 0.05 },
-    { location: [51.5074, -0.1278] as [number, number], size: 0.05 },
-    { location: [40.7128, -74.006] as [number, number], size: 0.06 },
+    { location: [-6.2088, 106.8456] as [number, number], size: 0.045 },
+    { location: [-3.6954, 128.1814] as [number, number], size: 0.026 },
+    { location: [-7.2575, 112.7521] as [number, number], size: 0.026 },
+    { location: [1.3521, 103.8198] as [number, number], size: 0.022 },
+    { location: [35.6762, 139.6503] as [number, number], size: 0.026 },
+    { location: [51.5074, -0.1278] as [number, number], size: 0.026 },
+    { location: [40.7128, -74.006] as [number, number], size: 0.030 },
   ],
 };
 
@@ -45,18 +48,40 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden bg-surface">
-      {/* Cropped by the bottom edge so it reads as a horizon rather than a
-          floating ball, and so nothing ever sits on top of the sign-in button. */}
+      {/* Dipotong tepi bawah layar supaya terbaca sebagai cakrawala, bukan bola
+          melayang. Ukurannya sengaja melebihi lebar layar dan puncaknya naik
+          sampai ke belakang tombol masuk — versi sebelumnya duduk terlalu
+          rendah sehingga separuh atas halaman jadi ruang kosong. */}
       <div className="absolute inset-x-0 bottom-0 flex justify-center">
-        <div className="relative aspect-square w-[min(150vw,760px)] translate-y-[34%]">
+        {/* shrink-0 wajib: ini item flex, dan tanpa itu lebar yang melebihi
+            layar akan disusutkan browser kembali ke lebar layar — bolanya tidak
+            pernah sebesar yang disetel.
+            Batas 95vh ikut dihitung karena bolanya bujur sangkar: tanpa itu,
+            layar lebar tapi pendek (laptop 1280x800) mendapat bola setinggi
+            1040px yang menelan hampir seluruh halaman. */}
+        <div className="relative aspect-square w-[min(200vw,95vh,1040px)] shrink-0 translate-y-[26%]">
           <Globe config={GLOBE_CONFIG} />
         </div>
       </div>
 
-      {/* Softens the globe's top edge into the background. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-[42%] top-0 bg-gradient-to-b from-surface via-surface to-transparent" />
+      {/* Melembutkan tepi atas bola ke latar. Berhenti lebih tinggi daripada
+          sebelumnya supaya bolanya tidak ikut terhapus sekarang ia naik. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[26%] bg-gradient-to-b from-surface to-transparent" />
 
-      <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-8 px-6 pb-[42vh] text-center">
+      {/* Bola yang naik sampai ke belakang teks membuat titik-titik daratannya
+          beradu dengan tulisan. Kabut lembut ini mengembalikan kontrasnya tanpa
+          menutup bolanya — radial, bukan kotak, supaya tepinya tidak terlihat. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-[8%] h-[62%]"
+        style={{
+          // Kabut, bukan penghapus: di titik paling pekat pun latar hanya 62%,
+          // jadi bolanya tetap terlihat menembusnya.
+          background:
+            "radial-gradient(ellipse 72% 46% at 50% 44%, color-mix(in srgb, var(--surface) 62%, transparent) 0%, color-mix(in srgb, var(--surface) 34%, transparent) 55%, transparent 100%)",
+        }}
+      />
+
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-8 px-6 pb-[22vh] text-center">
       <div className="flex flex-col items-center gap-3">
         <Logo className="text-ink" detailed />
         <p className="max-w-xs text-sm text-ink-muted">{t("app.tagline")}</p>
