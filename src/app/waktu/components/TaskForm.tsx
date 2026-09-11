@@ -29,8 +29,8 @@ export default function TaskForm({
   units: string[];
   /** Owner names already used, offered as a datalist so spelling stays stable. */
   owners: string[];
-  onSubmit: (data: NewTask) => Promise<void>;
-  onDelete?: (id: string) => Promise<void>;
+  onSubmit: (data: NewTask) => void | Promise<void>;
+  onDelete?: (id: string) => void | Promise<void>;
   onClose: () => void;
 }) {
   const t = useT();

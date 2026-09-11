@@ -24,7 +24,7 @@ export default function AllocationSheet({
   onClose,
 }: {
   settings: FinanceSettings;
-  onSubmit: (patch: Partial<FinanceSettings>) => Promise<void>;
+  onSubmit: (patch: Partial<FinanceSettings>) => void | Promise<void>;
   onClose: () => void;
 }) {
   const t = useT();

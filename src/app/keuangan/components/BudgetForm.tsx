@@ -24,8 +24,8 @@ export default function BudgetForm({
   defaultMonth: string;
   /** Categories that already have a budget this month — one row each. */
   takenCategories: string[];
-  onSubmit: (data: NewBudget) => Promise<void>;
-  onDelete?: (id: string) => Promise<void>;
+  onSubmit: (data: NewBudget) => void | Promise<void>;
+  onDelete?: (id: string) => void | Promise<void>;
   onClose: () => void;
 }) {
   const t = useT();

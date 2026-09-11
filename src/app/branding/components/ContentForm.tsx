@@ -10,7 +10,7 @@ export default function ContentForm({
   onSubmit,
   onClose,
 }: {
-  onSubmit: (data: NewContentItem) => Promise<void>;
+  onSubmit: (data: NewContentItem) => void | Promise<void>;
   onClose: () => void;
 }) {
   const [title, setTitle] = useState("");

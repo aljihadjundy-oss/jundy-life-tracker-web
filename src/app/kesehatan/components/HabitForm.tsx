@@ -8,7 +8,7 @@ export default function HabitForm({
   onSubmit,
   onClose,
 }: {
-  onSubmit: (data: NewHabit) => Promise<void>;
+  onSubmit: (data: NewHabit) => void | Promise<void>;
   onClose: () => void;
 }) {
   const [name, setName] = useState("");

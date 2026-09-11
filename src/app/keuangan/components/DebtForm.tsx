@@ -12,8 +12,8 @@ export default function DebtForm({
   onClose,
 }: {
   initial?: Debt | null;
-  onSubmit: (data: NewDebt) => Promise<void>;
-  onDelete?: (id: string) => Promise<void>;
+  onSubmit: (data: NewDebt) => void | Promise<void>;
+  onDelete?: (id: string) => void | Promise<void>;
   onClose: () => void;
 }) {
   const t = useT();

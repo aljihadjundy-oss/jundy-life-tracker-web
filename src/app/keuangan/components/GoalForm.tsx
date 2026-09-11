@@ -19,8 +19,8 @@ export default function GoalForm({
   onClose,
 }: {
   initial?: Goal | null;
-  onSubmit: (data: NewGoal) => Promise<void>;
-  onDelete?: (id: string) => Promise<void>;
+  onSubmit: (data: NewGoal) => void | Promise<void>;
+  onDelete?: (id: string) => void | Promise<void>;
   onClose: () => void;
 }) {
   const t = useT();

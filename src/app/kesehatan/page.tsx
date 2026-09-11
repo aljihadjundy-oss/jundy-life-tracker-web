@@ -48,6 +48,7 @@ import { useT } from "@/lib/i18n";
 import { useUserConfig } from "@/lib/user-context";
 import { cycleRelevantByDefault } from "@/types/profile";
 import { awardXpInBackground } from "@/lib/gamification";
+import { reportFailure } from "@/lib/notify";
 
 type Tab = "today" | "body" | "habits";
 
@@ -185,30 +186,30 @@ function KesehatanContent() {
     void patchMetrics(user.uid, today, patch);
   }
 
-  async function handleAddHabit(data: NewHabit) {
+  function handleAddHabit(data: NewHabit) {
     if (!user) return;
-    await addHabit(user.uid, data);
+    reportFailure(addHabit(user.uid, data), t("notify.saveFailed"));
   }
 
-  async function handleDeleteHabit(id: string) {
+  function handleDeleteHabit(id: string) {
     if (!user) return;
-    await deleteHabit(user.uid, id);
+    reportFailure(deleteHabit(user.uid, id), t("notify.deleteFailed"));
   }
 
-  async function handleBulkDeleteHabits(ids: string[]) {
+  function handleBulkDeleteHabits(ids: string[]) {
     if (!user) return;
-    await deleteHabits(user.uid, ids);
+    reportFailure(deleteHabits(user.uid, ids), t("notify.deleteFailed"));
   }
 
-  async function handleToggleHabit(habitId: string, next: boolean) {
+  function handleToggleHabit(habitId: string, next: boolean) {
     if (!user) return;
-    await setHabitLog(user.uid, habitId, selectedDate, next);
+    reportFailure(setHabitLog(user.uid, habitId, selectedDate, next), t("notify.saveFailed"));
     if (next) awardXpInBackground(user.uid, "habit");
   }
 
-  async function handleSaveSettings(patch: Partial<HealthSettings>) {
+  function handleSaveSettings(patch: Partial<HealthSettings>) {
     if (!user) return;
-    await saveHealthSettings(user.uid, patch);
+    reportFailure(saveHealthSettings(user.uid, patch), t("notify.saveFailed"));
   }
 
   function logExercise(entry: ExerciseLog) {

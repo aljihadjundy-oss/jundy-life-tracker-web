@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import TopBar from "@/components/TopBar";
 import { useAuth } from "@/lib/auth-context";
+import { reportFailure } from "@/lib/notify";
 import {
   enablePushNotifications,
   setReminderSettings,
   subscribeNotificationSettings,
   type NotificationSettings,
 } from "@/lib/messaging";
+import BackupCard from "./components/BackupCard";
 import Switch from "./components/Switch";
 import UnitsCard from "./components/UnitsCard";
 import PillarsCard from "./components/PillarsCard";
@@ -73,20 +75,26 @@ function PengaturanContent() {
     } else {
       setPermission("granted");
       if (!settings.enabled) {
-        await setReminderSettings(user.uid, true, settings.reminderTime);
+        reportFailure(
+          setReminderSettings(user.uid, true, settings.reminderTime),
+          t("notify.saveFailed")
+        );
       }
     }
     setEnabling(false);
   }
 
-  async function handleToggleReminder(next: boolean) {
+  function handleToggleReminder(next: boolean) {
     if (!user) return;
-    await setReminderSettings(user.uid, next, settings.reminderTime);
+    reportFailure(
+      setReminderSettings(user.uid, next, settings.reminderTime),
+      t("notify.saveFailed")
+    );
   }
 
-  async function handleTimeChange(time: string) {
+  function handleTimeChange(time: string) {
     if (!user) return;
-    await setReminderSettings(user.uid, settings.enabled, time);
+    reportFailure(setReminderSettings(user.uid, settings.enabled, time), t("notify.saveFailed"));
   }
 
   const isActive = permission === "granted" && settings.tokenCount > 0;
@@ -210,6 +218,8 @@ function PengaturanContent() {
 
 <p className="px-1 text-[11px] leading-relaxed text-ink-muted">{t("settings.reminderNote")}</p>
 
+        <BackupCard uid={user?.uid} />
+
         <BuildStamp />
       </div>
 
@@ -217,7 +227,7 @@ function PengaturanContent() {
         <ProfileSheet
           profile={profile}
           onSubmit={async (patch) => {
-            if (user) await saveProfile(user.uid, patch);
+            if (user) reportFailure(saveProfile(user.uid, patch), t("notify.saveFailed"));
           }}
           onClose={() => setShowProfile(false)}
         />

@@ -18,7 +18,7 @@ export default function ImportSheet({
   onClose,
 }: {
   units: string[];
-  onImport: (tasks: NewTask[]) => Promise<void>;
+  onImport: (tasks: NewTask[]) => void | Promise<void>;
   onClose: () => void;
 }) {
   const t = useT();

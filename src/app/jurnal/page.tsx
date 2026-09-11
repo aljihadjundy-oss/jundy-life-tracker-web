@@ -14,6 +14,7 @@ import { deleteClip } from "@/lib/audio-store";
 import SelectionBar from "@/components/SelectionBar";
 import { useSelection } from "@/lib/useSelection";
 import { awardXpInBackground } from "@/lib/gamification";
+import { reportFailure } from "@/lib/notify";
 
 export default function JurnalPage() {
   return (
@@ -51,28 +52,35 @@ function JurnalContent() {
     setShowEditor(true);
   }
 
-  async function handleCreate(data: NewJournalEntry) {
+  function handleCreate(data: NewJournalEntry) {
     if (!user) throw new Error("not signed in");
-    const id = await addEntry(user.uid, data);
+    // id dibuat di klien, jadi auto-save bisa langsung lanjut — lihat addEntry.
+    const { id, done } = addEntry(user.uid, data);
+    reportFailure(done, t("notify.saveFailed"));
     awardXpInBackground(user.uid, "journal");
     return id;
   }
 
-  async function handleUpdate(id: string, data: Partial<NewJournalEntry>) {
+  function handleUpdate(id: string, data: Partial<NewJournalEntry>) {
     if (!user) return;
-    await updateEntry(user.uid, id, data);
+    reportFailure(updateEntry(user.uid, id, data), t("notify.saveFailed"));
   }
 
-  async function handleDelete(id: string) {
+  function handleDelete(id: string) {
     if (!user) return;
-    await deleteEntry(user.uid, id);
-    await deleteClip(id);
+    // Klip suara hanya ada di perangkat ini, jadi dihapus bersamaan.
+    reportFailure(
+      Promise.all([deleteEntry(user.uid, id), deleteClip(id)]),
+      t("notify.deleteFailed")
+    );
   }
 
-  async function handleBulkDelete(ids: string[]) {
+  function handleBulkDelete(ids: string[]) {
     if (!user) return;
-    await deleteEntries(user.uid, ids);
-    await Promise.all(ids.map(deleteClip));
+    reportFailure(
+      Promise.all([deleteEntries(user.uid, ids), ...ids.map(deleteClip)]),
+      t("notify.deleteFailed")
+    );
   }
 
   return (

@@ -21,6 +21,7 @@ import { useT } from "@/lib/i18n";
 import SelectionBar from "@/components/SelectionBar";
 import { useSelection } from "@/lib/useSelection";
 import { awardXpInBackground } from "@/lib/gamification";
+import { reportFailure } from "@/lib/notify";
 import YouTubeCard from "./components/YouTubeCard";
 
 export default function BrandingPage() {
@@ -82,25 +83,25 @@ function BrandingContent() {
     return [...list].sort((a, b) => a.postDate.localeCompare(b.postDate));
   }, [content, selectedPlatform]);
 
-  async function handleAdd(data: NewContentItem) {
+  function handleAdd(data: NewContentItem) {
     if (!user) return;
-    await addContent(user.uid, data);
+    reportFailure(addContent(user.uid, data), t("notify.saveFailed"));
   }
 
-  async function handleCycleStatus(id: string, status: ContentStatus) {
+  function handleCycleStatus(id: string, status: ContentStatus) {
     if (!user) return;
-    await updateContentStatus(user.uid, id, status);
+    reportFailure(updateContentStatus(user.uid, id, status), t("notify.saveFailed"));
     if (status === "posted") awardXpInBackground(user.uid, "post");
   }
 
-  async function handleDelete(id: string) {
+  function handleDelete(id: string) {
     if (!user) return;
-    await deleteContent(user.uid, id);
+    reportFailure(deleteContent(user.uid, id), t("notify.deleteFailed"));
   }
 
-  async function handleBulkDelete(ids: string[]) {
+  function handleBulkDelete(ids: string[]) {
     if (!user) return;
-    await deleteContents(user.uid, ids);
+    reportFailure(deleteContents(user.uid, ids), t("notify.deleteFailed"));
   }
 
   return (

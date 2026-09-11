@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 import RegisterSW from "@/components/RegisterSW";
 import CelebrationLayer from "@/components/CelebrationLayer";
+import NotifyLayer from "@/components/NotifyLayer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -66,6 +67,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <AuthProvider>
           {children}
           <CelebrationLayer />
+          <NotifyLayer />
         </AuthProvider>
         <RegisterSW />
       </body>

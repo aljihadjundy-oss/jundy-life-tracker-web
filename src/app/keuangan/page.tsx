@@ -61,6 +61,7 @@ import { useT } from "@/lib/i18n";
 import SelectionBar from "@/components/SelectionBar";
 import { useSelection } from "@/lib/useSelection";
 import { awardXpInBackground } from "@/lib/gamification";
+import { reportFailure } from "@/lib/notify";
 
 type Tab = "overview" | "transactions" | "budgets" | "accounts" | "debts" | "goals";
 
@@ -137,9 +138,14 @@ function KeuanganContent() {
 
   const uid = user?.uid;
 
-  async function save<T>(fn: (uid: string) => Promise<T>) {
+  // Tidak di-`await`. Firestore menerapkan tulisan ke cache lokal seketika dan
+  // listener snapshot langsung merender hasilnya, jadi menunggu server hanya
+  // menahan form terbuka. Lebih penting lagi: saat offline, promise tulis
+  // Firestore tidak pernah resolve — menunggunya berarti form menggantung
+  // selamanya. Kegagalan yang sungguhan tetap muncul lewat reportFailure.
+  function save<T>(fn: (uid: string) => Promise<T>) {
     if (!uid) return;
-    await fn(uid);
+    reportFailure(fn(uid), t("notify.saveFailed"));
   }
 
   // Deliberately not awaited. Firestore applies the write to its local cache
@@ -150,10 +156,10 @@ function KeuanganContent() {
   function handleAddTransaction(data: NewTransaction) {
     if (!uid) return;
     if (editing?.kind === "transaction" && editing.item) {
-      void updateTransaction(uid, editing.item.id, data);
+      reportFailure(updateTransaction(uid, editing.item.id, data), t("notify.saveFailed"));
       return;
     }
-    void addTransaction(uid, data);
+    reportFailure(addTransaction(uid, data), t("notify.saveFailed"));
     awardXpInBackground(uid, "transaction");
   }
 
@@ -166,13 +172,16 @@ function KeuanganContent() {
     return [];
   }, [tab, transactions, monthBudgets, accounts, debts, goals]);
 
-  async function handleBulkDelete(ids: string[]) {
+  function handleBulkDelete(ids: string[]) {
     if (!uid) return;
-    if (tab === "transactions") await deleteTransactions(uid, ids);
-    else if (tab === "budgets") await deleteBudgets(uid, ids);
-    else if (tab === "accounts") await deleteAccounts(uid, ids);
-    else if (tab === "debts") await deleteDebts(uid, ids);
-    else if (tab === "goals") await deleteGoals(uid, ids);
+    const run =
+      tab === "transactions" ? deleteTransactions(uid, ids)
+      : tab === "budgets" ? deleteBudgets(uid, ids)
+      : tab === "accounts" ? deleteAccounts(uid, ids)
+      : tab === "debts" ? deleteDebts(uid, ids)
+      : tab === "goals" ? deleteGoals(uid, ids)
+      : null;
+    if (run) reportFailure(run, t("notify.deleteFailed"));
   }
 
   const rowProps = (id: string) => ({

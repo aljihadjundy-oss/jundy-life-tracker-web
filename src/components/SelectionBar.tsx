@@ -18,7 +18,7 @@ export default function SelectionBar({
   selection: Selection;
   /** Every id currently visible, for "select all". */
   allIds: string[];
-  onDelete: (ids: string[]) => Promise<void>;
+  onDelete: (ids: string[]) => void | Promise<void>;
   /** Module-specific bulk action rendered on its own row above the buttons. */
   extra?: React.ReactNode;
 }) {

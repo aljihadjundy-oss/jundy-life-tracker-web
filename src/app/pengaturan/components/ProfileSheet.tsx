@@ -10,7 +10,7 @@ export default function ProfileSheet({
   onClose,
 }: {
   profile: Profile;
-  onSubmit: (patch: Partial<Profile>) => Promise<void>;
+  onSubmit: (patch: Partial<Profile>) => void | Promise<void>;
   onClose: () => void;
 }) {
   const t = useT();

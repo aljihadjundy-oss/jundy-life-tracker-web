@@ -22,8 +22,8 @@ export default function JournalEditor({
 }: {
   entry: JournalEntry | null;
   /** Creates the entry and returns its new id. */
-  onCreate: (data: NewJournalEntry) => Promise<string>;
-  onUpdate: (id: string, data: Partial<NewJournalEntry>) => Promise<void>;
+  onCreate: (data: NewJournalEntry) => string | Promise<string>;
+  onUpdate: (id: string, data: Partial<NewJournalEntry>) => void | Promise<void>;
   onClose: () => void;
 }) {
   const t = useT();

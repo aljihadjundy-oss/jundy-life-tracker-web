@@ -29,7 +29,7 @@ export default function TransactionForm({
   initial?: Transaction | null;
   accounts: Account[];
   onSubmit: (data: NewTransaction) => void | Promise<void>;
-  onDelete?: (id: string) => Promise<void>;
+  onDelete?: (id: string) => void | Promise<void>;
   onClose: () => void;
 }) {
   const t = useT();

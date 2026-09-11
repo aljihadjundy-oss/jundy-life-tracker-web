@@ -13,8 +13,8 @@ export default function AccountForm({
   onClose,
 }: {
   initial?: Account | null;
-  onSubmit: (data: NewAccount) => Promise<void>;
-  onDelete?: (id: string) => Promise<void>;
+  onSubmit: (data: NewAccount) => void | Promise<void>;
+  onDelete?: (id: string) => void | Promise<void>;
   onClose: () => void;
 }) {
   const t = useT();

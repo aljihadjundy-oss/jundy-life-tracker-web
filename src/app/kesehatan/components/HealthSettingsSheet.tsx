@@ -23,7 +23,7 @@ export default function HealthSettingsSheet({
   onClose,
 }: {
   settings: HealthSettings;
-  onSave: (patch: Partial<HealthSettings>) => Promise<void>;
+  onSave: (patch: Partial<HealthSettings>) => void | Promise<void>;
   onClose: () => void;
 }) {
   const t = useT();

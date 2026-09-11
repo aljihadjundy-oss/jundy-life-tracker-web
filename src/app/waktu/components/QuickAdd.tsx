@@ -7,7 +7,7 @@ import { useT } from "@/lib/i18n";
  * One line, Enter, done. The same tag syntax the importer understands works
  * here too, so "Kirim deck @Tara #Hexolution ^2026-10-02" lands fully filled in.
  */
-export default function QuickAdd({ onAdd }: { onAdd: (line: string) => Promise<void> }) {
+export default function QuickAdd({ onAdd }: { onAdd: (line: string) => void | Promise<void> }) {
   const t = useT();
   const [value, setValue] = useState("");
   const [busy, setBusy] = useState(false);

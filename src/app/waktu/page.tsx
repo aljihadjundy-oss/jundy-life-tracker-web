@@ -51,6 +51,7 @@ import SelectionBar from "@/components/SelectionBar";
 import { useSelection } from "@/lib/useSelection";
 import { useT } from "@/lib/i18n";
 import { awardXpInBackground } from "@/lib/gamification";
+import { reportFailure } from "@/lib/notify";
 
 type View = "list" | "day" | "month";
 
@@ -149,14 +150,16 @@ function WaktuContent() {
     setCollapsed((prev) => (prev.includes(key) ? prev.filter((x) => x !== key) : [...prev, key]));
   }
 
-  async function handleSubmit(data: NewTask) {
+  function handleSubmit(data: NewTask) {
     if (!user) return;
-    if (form?.initial) await updateTask(user.uid, form.initial.id, data);
-    else await addTask(user.uid, data);
+    const run = form?.initial
+      ? updateTask(user.uid, form.initial.id, data)
+      : addTask(user.uid, data);
+    reportFailure(run, t("notify.saveFailed"));
   }
 
   /** Quick add understands the same @owner #unit ^date tags as the importer. */
-  async function handleQuickAdd(line: string) {
+  function handleQuickAdd(line: string) {
     if (!user) return;
     const [parsed] = parseTaskLines(line, settings.units);
     const base: NewTask = parsed
@@ -175,34 +178,34 @@ function WaktuContent() {
           link: "",
           source: "manual",
         };
-    await addTask(user.uid, base);
+    reportFailure(addTask(user.uid, base), t("notify.saveFailed"));
   }
 
-  async function handleCycleStatus(id: string, status: TaskStatus) {
+  function handleCycleStatus(id: string, status: TaskStatus) {
     if (!user) return;
-    await updateTaskStatus(user.uid, id, status);
+    reportFailure(updateTaskStatus(user.uid, id, status), t("notify.saveFailed"));
     if (status === "done") awardXpInBackground(user.uid, "task");
   }
 
-  async function handleDelete(id: string) {
+  function handleDelete(id: string) {
     if (!user) return;
-    await deleteTask(user.uid, id);
+    reportFailure(deleteTask(user.uid, id), t("notify.deleteFailed"));
   }
 
-  async function handleBulkDelete(ids: string[]) {
+  function handleBulkDelete(ids: string[]) {
     if (!user) return;
-    await deleteTasks(user.uid, ids);
+    reportFailure(deleteTasks(user.uid, ids), t("notify.deleteFailed"));
   }
 
-  async function handleBulkStatus(status: TaskStatus) {
+  function handleBulkStatus(status: TaskStatus) {
     if (!user || selection.ids.length === 0) return;
-    await updateTaskStatuses(user.uid, selection.ids, status);
+    reportFailure(updateTaskStatuses(user.uid, selection.ids, status), t("notify.saveFailed"));
     selection.stop();
   }
 
-  async function handleImport(newTasks: NewTask[]) {
+  function handleImport(newTasks: NewTask[]) {
     if (!user) return;
-    await addTasksBatch(user.uid, newTasks);
+    reportFailure(addTasksBatch(user.uid, newTasks), t("notify.saveFailed"));
   }
 
   function handleExport() {

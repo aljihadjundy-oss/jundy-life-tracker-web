@@ -23,7 +23,7 @@ export default function ImportSheet({
 }: {
   /** A statement belongs to one account; every imported row lands there. */
   accounts: { id: string; name: string }[];
-  onImport: (transactions: NewTransaction[]) => Promise<void>;
+  onImport: (transactions: NewTransaction[]) => void | Promise<void>;
   onClose: () => void;
 }) {
   const t = useT();

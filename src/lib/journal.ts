@@ -1,5 +1,4 @@
 import {
-  addDoc,
   collection,
   deleteDoc,
   doc,
@@ -7,6 +6,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   Timestamp,
   updateDoc,
 } from "firebase/firestore";
@@ -42,13 +42,26 @@ export function subscribeEntries(uid: string, onData: (entries: JournalEntry[]) 
 }
 
 /** Returns the new document id so autosave can keep updating the same entry. */
-export async function addEntry(uid: string, entry: NewJournalEntry) {
-  const ref = await addDoc(journalRef(uid), {
+/**
+ * Membuat entri baru dan mengembalikan id-nya SEKARANG, tanpa menunggu server.
+ *
+ * Sebelumnya ini memakai `addDoc` dan menunggu promise-nya untuk mendapat id.
+ * Saat offline promise itu tidak pernah resolve, sehingga auto-save jurnal —
+ * yang memang menunggu id sebelum boleh menyimpan lagi — mengunci diri sendiri
+ * dan seluruh tulisan berikutnya hilang. `doc()` membuat id di klien, jadi id
+ * tersedia seketika dan tulisannya tetap antre di cache seperti biasa.
+ *
+ * `done` diberikan terpisah supaya pemanggil bisa melaporkan kegagalan yang
+ * sungguhan tanpa harus menahan UI.
+ */
+export function addEntry(uid: string, entry: NewJournalEntry) {
+  const ref = doc(journalRef(uid));
+  const done = setDoc(ref, {
     ...entry,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
-  return ref.id;
+  return { id: ref.id, done };
 }
 
 export async function updateEntry(uid: string, id: string, entry: Partial<NewJournalEntry>) {
