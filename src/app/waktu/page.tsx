@@ -50,8 +50,7 @@ import ImportSheet from "./components/ImportSheet";
 import SelectionBar from "@/components/SelectionBar";
 import { useSelection } from "@/lib/useSelection";
 import { useT } from "@/lib/i18n";
-import { awardXp } from "@/lib/gamification";
-import { celebrate } from "@/lib/celebrate";
+import { awardXpInBackground } from "@/lib/gamification";
 
 type View = "list" | "day" | "month";
 
@@ -182,7 +181,7 @@ function WaktuContent() {
   async function handleCycleStatus(id: string, status: TaskStatus) {
     if (!user) return;
     await updateTaskStatus(user.uid, id, status);
-    if (status === "done") celebrate(await awardXp(user.uid, "task"));
+    if (status === "done") awardXpInBackground(user.uid, "task");
   }
 
   async function handleDelete(id: string) {

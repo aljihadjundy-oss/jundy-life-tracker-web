@@ -1,4 +1,5 @@
 import { doc, onSnapshot, runTransaction, setDoc } from "firebase/firestore";
+import { celebrate } from "./celebrate";
 import { db } from "./firebase";
 import { addDaysISO, todayISO } from "./format";
 import {
@@ -73,6 +74,26 @@ export type AwardResult = {
   newBadges: string[];
   goalJustReached: boolean;
 };
+
+/**
+ * Fire-and-forget version of `awardXp`, for the UI paths that used to `await`
+ * it before closing a form.
+ *
+ * `runTransaction` is the one Firestore call that cannot be served from the
+ * local cache — it must read from the server, then commit, retrying on
+ * contention. That is a full round trip, and awaiting it meant every saved
+ * transaction, task or journal entry held the sheet open for the length of it.
+ * The XP pop is decoration; it has no business blocking the save.
+ *
+ * Failures are swallowed on purpose: losing a few XP is not worth an error
+ * dialog over the thing the user actually came to do, which has already been
+ * written.
+ */
+export function awardXpInBackground(uid: string, action: GameAction) {
+  void awardXp(uid, action)
+    .then(celebrate)
+    .catch(() => {});
+}
 
 export async function awardXp(uid: string, action: GameAction): Promise<AwardResult> {
   const gained = XP_REWARDS[action];

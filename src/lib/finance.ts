@@ -86,6 +86,15 @@ export async function addTransactionsBatch(uid: string, transactions: NewTransac
   }
 }
 
+/**
+ * Edits the row in place. The old path deleted the document and added a new
+ * one, which cost two round trips and — because `createdAt` was re-stamped —
+ * jumped the edited row to the top of the list.
+ */
+export async function updateTransaction(uid: string, id: string, patch: NewTransaction) {
+  await updateDoc(doc(db, "users", uid, "transactions", id), { ...patch });
+}
+
 export async function deleteTransaction(uid: string, id: string) {
   await deleteDoc(doc(db, "users", uid, "transactions", id));
 }

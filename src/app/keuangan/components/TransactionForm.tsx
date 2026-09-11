@@ -28,7 +28,7 @@ export default function TransactionForm({
 }: {
   initial?: Transaction | null;
   accounts: Account[];
-  onSubmit: (data: NewTransaction) => Promise<void>;
+  onSubmit: (data: NewTransaction) => void | Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   onClose: () => void;
 }) {

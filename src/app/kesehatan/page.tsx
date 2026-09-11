@@ -47,8 +47,7 @@ import { useSelection } from "@/lib/useSelection";
 import { useT } from "@/lib/i18n";
 import { useUserConfig } from "@/lib/user-context";
 import { cycleRelevantByDefault } from "@/types/profile";
-import { awardXp } from "@/lib/gamification";
-import { celebrate } from "@/lib/celebrate";
+import { awardXpInBackground } from "@/lib/gamification";
 
 type Tab = "today" | "body" | "habits";
 
@@ -204,7 +203,7 @@ function KesehatanContent() {
   async function handleToggleHabit(habitId: string, next: boolean) {
     if (!user) return;
     await setHabitLog(user.uid, habitId, selectedDate, next);
-    if (next) celebrate(await awardXp(user.uid, "habit"));
+    if (next) awardXpInBackground(user.uid, "habit");
   }
 
   async function handleSaveSettings(patch: Partial<HealthSettings>) {

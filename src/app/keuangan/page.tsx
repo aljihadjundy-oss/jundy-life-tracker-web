@@ -11,6 +11,7 @@ import {
   addGoal,
   addTransaction,
   addTransactionsBatch,
+  updateTransaction,
   copyBudgets,
   deleteAccounts,
   deleteBudgets,
@@ -59,8 +60,7 @@ import { AccountCard, BudgetCard, DebtCard, GoalCard } from "./components/MoneyC
 import { useT } from "@/lib/i18n";
 import SelectionBar from "@/components/SelectionBar";
 import { useSelection } from "@/lib/useSelection";
-import { awardXp } from "@/lib/gamification";
-import { celebrate } from "@/lib/celebrate";
+import { awardXpInBackground } from "@/lib/gamification";
 
 type Tab = "overview" | "transactions" | "budgets" | "accounts" | "debts" | "goals";
 
@@ -142,16 +142,19 @@ function KeuanganContent() {
     await fn(uid);
   }
 
-  async function handleAddTransaction(data: NewTransaction) {
+  // Deliberately not awaited. Firestore applies the write to its local cache
+  // straight away and the snapshot listener re-renders from it, so the row is
+  // on screen before the server has even been asked; awaiting only held the
+  // sheet open for a round trip. A write that ultimately fails is rolled back
+  // out of the cache and the same listener corrects the list.
+  function handleAddTransaction(data: NewTransaction) {
     if (!uid) return;
     if (editing?.kind === "transaction" && editing.item) {
-      // Editing rewrites the row; amount and account may both have moved.
-      await deleteTransaction(uid, editing.item.id);
-      await addTransaction(uid, data);
+      void updateTransaction(uid, editing.item.id, data);
       return;
     }
-    await addTransaction(uid, data);
-    celebrate(await awardXp(uid, "transaction"));
+    void addTransaction(uid, data);
+    awardXpInBackground(uid, "transaction");
   }
 
   const visibleIds = useMemo(() => {

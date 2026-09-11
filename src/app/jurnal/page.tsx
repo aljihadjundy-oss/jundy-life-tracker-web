@@ -13,8 +13,7 @@ import { useT } from "@/lib/i18n";
 import { deleteClip } from "@/lib/audio-store";
 import SelectionBar from "@/components/SelectionBar";
 import { useSelection } from "@/lib/useSelection";
-import { awardXp } from "@/lib/gamification";
-import { celebrate } from "@/lib/celebrate";
+import { awardXpInBackground } from "@/lib/gamification";
 
 export default function JurnalPage() {
   return (
@@ -55,7 +54,7 @@ function JurnalContent() {
   async function handleCreate(data: NewJournalEntry) {
     if (!user) throw new Error("not signed in");
     const id = await addEntry(user.uid, data);
-    celebrate(await awardXp(user.uid, "journal"));
+    awardXpInBackground(user.uid, "journal");
     return id;
   }
 
