@@ -88,11 +88,11 @@ src/
   app/                  # routes (App Router) — 1 folder per modul
     keuangan/            # transaksi, budget bulanan
       components/
-    waktu/                # task list, agenda harian
+    waktu/                # task berjam, kalender hari & bulan, agenda
       components/
     branding/             # content calendar, konsistensi posting
       components/
-    kesehatan/            # habit checklist, log metrik
+    kesehatan/            # siklus/fase, air, makan, tidur, mood, gejala, gerak, habit
       components/
     jurnal/               # free writing / journaling
       components/
@@ -113,13 +113,17 @@ firestore.rules           # data di-lock per uid (users/{uid}/...)
 ```
 users/{uid}/transactions/{id}     → { type, amount, category, note, date, createdAt }
 users/{uid}/settings/finance      → { monthlyBudget }
-users/{uid}/tasks/{id}            → { title, note, dueDate, status, createdAt }
+users/{uid}/tasks/{id}            → { title, note, dueDate, startTime, durationMinutes,
+                                      reminderMinutes, status, createdAt, notifiedFor }
 users/{uid}/content/{id}          → { title, platform, postDate, status, note, createdAt }
 users/{uid}/habits/{id}           → { name, createdAt }
 users/{uid}/habitLogs/{date_habitId} → { habitId, date }
-users/{uid}/metrics/{date}        → { date, sleepHours, exerciseMinutes, waterGlasses }
+users/{uid}/metrics/{date}        → { date, sleepHours, exerciseMinutes, waterGlasses,
+                                      energy, mood, symptoms, mealsDone, exercise }
 users/{uid}/journal/{id}          → { title, content, mood, date, createdAt, updatedAt }
-users/{uid}/settings/notifications → { enabled, reminderTime, fcmTokens: [...] }
+users/{uid}/settings/notifications → { enabled, reminderTime, fcmTokens: [...], bedtimeNotifiedFor }
+users/{uid}/settings/health       → { bodyMode, cycleStart, cycleLength, periodLength, dueDate,
+                                      waterTarget, meals, bedtime, wakeTime, exercisePrefs }
 users/{uid}/settings/branding     → { youtubeChannel }
 users/{uid}/gamification/stats    → { totalXp, dailyGoal, xpByDate, unlockedBadges, counters }
 ```

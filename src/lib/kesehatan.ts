@@ -16,7 +16,16 @@ import {
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { deleteDocsBatch } from "./batch";
-import type { DailyMetrics, Habit, HabitLog, NewHabit } from "@/types/kesehatan";
+import {
+  DEFAULT_HEALTH_SETTINGS,
+  EMPTY_METRICS,
+  type DailyMetrics,
+  type ExerciseLog,
+  type Habit,
+  type HabitLog,
+  type HealthSettings,
+  type NewHabit,
+} from "@/types/kesehatan";
 
 function habitsRef(uid: string) {
   return collection(db, "users", uid, "habits");
@@ -76,36 +85,65 @@ export async function setHabitLog(uid: string, habitId: string, date: string, co
   }
 }
 
+function toMetrics(date: string, data: Record<string, unknown>): DailyMetrics {
+  return {
+    ...EMPTY_METRICS(date),
+    sleepHours: (data.sleepHours as number) ?? 0,
+    exerciseMinutes: (data.exerciseMinutes as number) ?? 0,
+    waterGlasses: (data.waterGlasses as number) ?? 0,
+    energy: (data.energy as number) ?? 0,
+    mood: (data.mood as string) ?? "",
+    symptoms: (data.symptoms as string[]) ?? [],
+    mealsDone: (data.mealsDone as string[]) ?? [],
+    exercise: (data.exercise as ExerciseLog[]) ?? [],
+  };
+}
+
 export function subscribeMetrics(uid: string, onData: (metrics: DailyMetrics[]) => void) {
   const q = query(metricsRef(uid), orderBy("date", "desc"), limit(120));
   return onSnapshot(q, (snapshot) => {
-    const items = snapshot.docs.map((d) => {
-      const data = d.data();
-      return {
-        date: d.id,
-        sleepHours: data.sleepHours ?? 0,
-        exerciseMinutes: data.exerciseMinutes ?? 0,
-        waterGlasses: data.waterGlasses ?? 0,
-      } as DailyMetrics;
-    });
-    onData(items);
+    onData(snapshot.docs.map((d) => toMetrics(d.id, d.data())));
   });
 }
 
 export async function getMetrics(uid: string, date: string): Promise<DailyMetrics | null> {
   const snap = await getDoc(doc(db, "users", uid, "metrics", date));
   if (!snap.exists()) return null;
-  const data = snap.data();
-  return {
-    date,
-    sleepHours: data.sleepHours ?? 0,
-    exerciseMinutes: data.exerciseMinutes ?? 0,
-    waterGlasses: data.waterGlasses ?? 0,
-  };
+  return toMetrics(date, snap.data());
 }
 
 export async function setMetrics(uid: string, metrics: DailyMetrics) {
   await setDoc(doc(db, "users", uid, "metrics", metrics.date), metrics, { merge: true });
+}
+
+/** Partial day update — used by the water, meal, mood and symptom controls. */
+export async function patchMetrics(uid: string, date: string, patch: Partial<DailyMetrics>) {
+  await setDoc(doc(db, "users", uid, "metrics", date), { date, ...patch }, { merge: true });
+}
+
+// ---------------------------------------------------------------------------
+// Health settings (users/{uid}/settings/health)
+// ---------------------------------------------------------------------------
+
+function healthSettingsRef(uid: string) {
+  return doc(db, "users", uid, "settings", "health");
+}
+
+export function subscribeHealthSettings(uid: string, onData: (settings: HealthSettings) => void) {
+  return onSnapshot(healthSettingsRef(uid), (snap) => {
+    const data = (snap.data() ?? {}) as Partial<HealthSettings>;
+    onData({
+      ...DEFAULT_HEALTH_SETTINGS,
+      ...data,
+      // Nested objects would otherwise be replaced wholesale by a partial doc.
+      meals: data.meals ?? DEFAULT_HEALTH_SETTINGS.meals,
+      exercisePrefs: { ...DEFAULT_HEALTH_SETTINGS.exercisePrefs, ...data.exercisePrefs },
+    });
+  });
+}
+
+export async function saveHealthSettings(uid: string, patch: Partial<HealthSettings>) {
+  await setDoc(healthSettingsRef(uid), patch, { merge: true });
 }
 
 /**

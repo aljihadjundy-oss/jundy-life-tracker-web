@@ -8,25 +8,50 @@ import {
   addHabit,
   deleteHabit,
   deleteHabits,
+  patchMetrics,
+  saveHealthSettings,
   setHabitLog,
-  setMetrics,
   subscribeHabitLogs,
   subscribeHabits,
+  subscribeHealthSettings,
   subscribeMetrics,
 } from "@/lib/kesehatan";
-import type { DailyMetrics, Habit, HabitLog, NewHabit } from "@/types/kesehatan";
-import { addDaysISO, todayISO } from "@/lib/format";
+import {
+  DEFAULT_HEALTH_SETTINGS,
+  EMPTY_METRICS,
+  type DailyMetrics,
+  type ExerciseLog,
+  type Habit,
+  type HabitLog,
+  type HealthSettings,
+  type NewHabit,
+} from "@/types/kesehatan";
+import { cycleInfo, suggestions, waterTarget } from "@/lib/cycle";
+import { addDaysISO, currentMonthKey, todayISO } from "@/lib/format";
 import HealthSummaryCard from "./components/HealthSummaryCard";
 import DayPicker from "./components/DayPicker";
 import MetricsCard from "./components/MetricsCard";
 import MetricsForm from "./components/MetricsForm";
 import HabitCard from "./components/HabitCard";
 import HabitForm from "./components/HabitForm";
-import { useT } from "@/lib/i18n";
+import BodyModeCard from "./components/BodyModeCard";
+import CycleCalendar from "./components/CycleCalendar";
+import WaterCard from "./components/WaterCard";
+import MealsCard from "./components/MealsCard";
+import SleepCard from "./components/SleepCard";
+import EnergyMoodCard from "./components/EnergyMoodCard";
+import SymptomsCard from "./components/SymptomsCard";
+import ExerciseCard from "./components/ExerciseCard";
+import HealthSettingsSheet from "./components/HealthSettingsSheet";
 import SelectionBar from "@/components/SelectionBar";
 import { useSelection } from "@/lib/useSelection";
+import { useT } from "@/lib/i18n";
 import { awardXp } from "@/lib/gamification";
 import { celebrate } from "@/lib/celebrate";
+
+type Tab = "today" | "body" | "habits";
+
+const TABS: Tab[] = ["today", "body", "habits"];
 
 export default function KesehatanPage() {
   return (
@@ -42,11 +67,15 @@ function KesehatanContent() {
   const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [metricsList, setMetricsList] = useState<DailyMetrics[]>([]);
+  const [settings, setSettings] = useState<HealthSettings>(DEFAULT_HEALTH_SETTINGS);
   const [loading, setLoading] = useState(true);
-  const selection = useSelection();
+  const [tab, setTab] = useState<Tab>("today");
   const [selectedDate, setSelectedDate] = useState(todayISO());
+  const [monthKey, setMonthKey] = useState(currentMonthKey());
   const [showHabitForm, setShowHabitForm] = useState(false);
   const [showMetricsForm, setShowMetricsForm] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const selection = useSelection();
 
   useEffect(() => {
     if (!user) return;
@@ -56,12 +85,24 @@ function KesehatanContent() {
     });
     const unsubLogs = subscribeHabitLogs(user.uid, setLogs);
     const unsubMetrics = subscribeMetrics(user.uid, setMetricsList);
+    const unsubSettings = subscribeHealthSettings(user.uid, setSettings);
     return () => {
       unsubHabits();
       unsubLogs();
       unsubMetrics();
+      unsubSettings();
     };
   }, [user]);
+
+  const metricsByDate = useMemo(() => {
+    const map = new Map<string, DailyMetrics>();
+    for (const m of metricsList) map.set(m.date, m);
+    return map;
+  }, [metricsList]);
+
+  const today = todayISO();
+  const todayMetrics = metricsByDate.get(today) ?? EMPTY_METRICS(today);
+  const selectedMetrics = metricsByDate.get(selectedDate) ?? null;
 
   const logsByDate = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -90,24 +131,47 @@ function KesehatanContent() {
   }, [logsByDate, isDateComplete]);
 
   const streak = useMemo(() => {
-    const today = todayISO();
     let streak = 0;
     for (let i = 0; ; i++) {
-      const date = addDaysISO(today, -i);
-      if (isDateComplete(date)) streak++;
+      if (isDateComplete(addDaysISO(today, -i))) streak++;
       else break;
     }
     return streak;
-  }, [isDateComplete]);
+  }, [isDateComplete, today]);
 
   const doneToday = useMemo(() => {
-    const ids = logsByDate.get(todayISO());
+    const ids = logsByDate.get(today);
     if (!ids) return 0;
     return habits.filter((h) => ids.has(h.id)).length;
-  }, [habits, logsByDate]);
+  }, [habits, logsByDate, today]);
+
+  const energyWeek = useMemo(
+    () =>
+      Array.from({ length: 7 }, (_, i) => {
+        const entry = metricsByDate.get(addDaysISO(today, i - 6));
+        return entry && entry.energy > 0 ? entry.energy : null;
+      }),
+    [metricsByDate, today]
+  );
+
+  const phase = settings.cycleStart ? cycleInfo(settings, today).phase : "follicular";
+  const movement = useMemo(
+    () => suggestions(settings.bodyMode, phase, settings.exercisePrefs),
+    [settings.bodyMode, phase, settings.exercisePrefs]
+  );
+
+  const movementHeading =
+    settings.bodyMode === "cycle"
+      ? t("health.movementForPhase", { phase: t(`health.phase.${phase}`).toLowerCase() })
+      : t(`health.movementFor.${settings.bodyMode}`);
 
   const selectedCompletedIds = logsByDate.get(selectedDate) ?? new Set<string>();
-  const selectedMetrics = metricsList.find((m) => m.date === selectedDate) ?? null;
+  const target = waterTarget(settings);
+
+  function patchToday(patch: Partial<DailyMetrics>) {
+    if (!user) return;
+    void patchMetrics(user.uid, today, patch);
+  }
 
   async function handleAddHabit(data: NewHabit) {
     if (!user) return;
@@ -130,77 +194,181 @@ function KesehatanContent() {
     if (next) celebrate(await awardXp(user.uid, "habit"));
   }
 
-  async function handleSaveMetrics(data: DailyMetrics) {
+  async function handleSaveMetrics(date: string, patch: Partial<DailyMetrics>) {
     if (!user) return;
-    await setMetrics(user.uid, data);
+    await patchMetrics(user.uid, date, patch);
+  }
+
+  async function handleSaveSettings(patch: Partial<HealthSettings>) {
+    if (!user) return;
+    await saveHealthSettings(user.uid, patch);
+  }
+
+  function logExercise(entry: ExerciseLog) {
+    patchToday({
+      exercise: [...todayMetrics.exercise, entry],
+      exerciseMinutes: todayMetrics.exerciseMinutes + entry.minutes,
+    });
   }
 
   return (
     <>
-      <TopBar title={t("health.title")} subtitle={t("health.subtitle")} />
-
-      <HealthSummaryCard streak={streak} doneToday={doneToday} totalHabits={habits.length} />
-
-      <div className="mt-5">
-        <h2 className="px-5 text-sm font-bold text-ink">{t("health.history")}</h2>
-        <DayPicker selected={selectedDate} onSelect={setSelectedDate} completeDates={completeDates} />
-      </div>
-
-      <div className="mt-1">
-        <MetricsCard metrics={selectedMetrics} onEdit={() => setShowMetricsForm(true)} />
-      </div>
-
-      <div className="mt-5 flex items-center justify-between px-5">
-        <h2 className="text-sm font-bold text-ink">{t("health.habitChecklist")}</h2>
-        <div className="flex gap-2">
+      <TopBar
+        title={t("health.title")}
+        subtitle={t("health.subtitle")}
+        extra={
           <button
-            onClick={() => (selection.active ? selection.stop() : selection.start())}
-            className="rounded-full bg-surface-raised px-3.5 py-2 text-xs font-bold text-ink-muted transition active:scale-95"
+            onClick={() => setShowSettings(true)}
+            aria-label={t("health.openSettings")}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-raised text-base transition active:scale-90"
           >
-            {selection.active ? t("app.cancel") : t("bulk.select")}
+            ⚙️
           </button>
+        }
+      />
+
+      <div className="mt-4 flex gap-1.5 px-5">
+        {TABS.map((item) => (
           <button
-            onClick={() => setShowHabitForm(true)}
-            className="rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
+            key={item}
+            onClick={() => setTab(item)}
+            className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition ${
+              tab === item ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+            }`}
           >
-            {t("app.add")}
+            {t(`health.tab.${item}`)}
           </button>
-        </div>
-      </div>
-
-      <div className="mt-3 flex flex-col gap-2.5 px-5 pb-6">
-        {loading && (
-          <div className="flex justify-center py-10">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-ink" />
-          </div>
-        )}
-
-        {!loading && habits.length === 0 && (
-          <div className="rounded-2xl bg-surface-raised p-8 text-center">
-            <p className="text-sm text-ink-muted">{t("health.empty")}</p>
-          </div>
-        )}
-
-        {habits.map((h) => (
-          <HabitCard
-            key={h.id}
-            habit={h}
-            completed={selectedCompletedIds.has(h.id)}
-            onToggle={handleToggleHabit}
-            onDelete={handleDeleteHabit}
-            selectMode={selection.active}
-            selected={selection.isSelected(h.id)}
-            onToggleSelect={selection.toggle}
-            onLongPress={selection.start}
-          />
         ))}
       </div>
 
-      <SelectionBar
-        selection={selection}
-        allIds={habits.map((h) => h.id)}
-        onDelete={handleBulkDeleteHabits}
-      />
+      {tab === "today" && (
+        <div className="mt-4 flex flex-col gap-4 pb-6">
+          <HealthSummaryCard streak={streak} doneToday={doneToday} totalHabits={habits.length} />
+          <EnergyMoodCard
+            energy={todayMetrics.energy}
+            mood={todayMetrics.mood}
+            week={energyWeek}
+            onEnergy={(energy) => patchToday({ energy })}
+            onMood={(mood) => patchToday({ mood })}
+          />
+          <WaterCard
+            glasses={todayMetrics.waterGlasses}
+            target={target}
+            onChange={(waterGlasses) => patchToday({ waterGlasses })}
+          />
+          <MealsCard
+            meals={settings.meals}
+            done={todayMetrics.mealsDone}
+            onToggle={(id) =>
+              patchToday({
+                mealsDone: todayMetrics.mealsDone.includes(id)
+                  ? todayMetrics.mealsDone.filter((x) => x !== id)
+                  : [...todayMetrics.mealsDone, id],
+              })
+            }
+          />
+          <SleepCard
+            bedtime={settings.bedtime}
+            wakeTime={settings.wakeTime}
+            onChange={(patch) => void handleSaveSettings(patch)}
+          />
+          <SymptomsCard
+            mode={settings.bodyMode}
+            selected={todayMetrics.symptoms}
+            onToggle={(symptom) =>
+              patchToday({
+                symptoms: todayMetrics.symptoms.includes(symptom)
+                  ? todayMetrics.symptoms.filter((x) => x !== symptom)
+                  : [...todayMetrics.symptoms, symptom],
+              })
+            }
+          />
+        </div>
+      )}
+
+      {tab === "body" && (
+        <div className="mt-4 flex flex-col gap-4 pb-6">
+          <BodyModeCard
+            settings={settings}
+            onPeriodStartedToday={() => void handleSaveSettings({ cycleStart: today })}
+            onOpenSettings={() => setShowSettings(true)}
+          />
+          <ExerciseCard
+            heading={movementHeading}
+            suggestions={movement}
+            logged={todayMetrics.exercise}
+            onLog={logExercise}
+          />
+          {settings.bodyMode === "cycle" && settings.cycleStart && (
+            <CycleCalendar settings={settings} monthKey={monthKey} onMonthChange={setMonthKey} />
+          )}
+        </div>
+      )}
+
+      {tab === "habits" && (
+        <>
+          <div className="mt-4">
+            <h2 className="px-5 text-sm font-bold text-ink">{t("health.history")}</h2>
+            <DayPicker selected={selectedDate} onSelect={setSelectedDate} completeDates={completeDates} />
+          </div>
+
+          <div className="mt-1">
+            <MetricsCard metrics={selectedMetrics} onEdit={() => setShowMetricsForm(true)} />
+          </div>
+
+          <div className="mt-5 flex items-center justify-between px-5">
+            <h2 className="text-sm font-bold text-ink">{t("health.habitChecklist")}</h2>
+            <div className="flex gap-2">
+              <button
+                onClick={() => (selection.active ? selection.stop() : selection.start())}
+                className="rounded-full bg-surface-raised px-3.5 py-2 text-xs font-bold text-ink-muted transition active:scale-95"
+              >
+                {selection.active ? t("app.cancel") : t("bulk.select")}
+              </button>
+              <button
+                onClick={() => setShowHabitForm(true)}
+                className="rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
+              >
+                {t("app.add")}
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-col gap-2.5 px-5 pb-6">
+            {loading && (
+              <div className="flex justify-center py-10">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-ink" />
+              </div>
+            )}
+
+            {!loading && habits.length === 0 && (
+              <div className="rounded-2xl bg-surface-raised p-8 text-center">
+                <p className="text-sm text-ink-muted">{t("health.empty")}</p>
+              </div>
+            )}
+
+            {habits.map((h) => (
+              <HabitCard
+                key={h.id}
+                habit={h}
+                completed={selectedCompletedIds.has(h.id)}
+                onToggle={handleToggleHabit}
+                onDelete={handleDeleteHabit}
+                selectMode={selection.active}
+                selected={selection.isSelected(h.id)}
+                onToggleSelect={selection.toggle}
+                onLongPress={selection.start}
+              />
+            ))}
+          </div>
+
+          <SelectionBar
+            selection={selection}
+            allIds={habits.map((h) => h.id)}
+            onDelete={handleBulkDeleteHabits}
+          />
+        </>
+      )}
 
       {showHabitForm && <HabitForm onSubmit={handleAddHabit} onClose={() => setShowHabitForm(false)} />}
       {showMetricsForm && (
@@ -209,6 +377,13 @@ function KesehatanContent() {
           initial={selectedMetrics}
           onSubmit={handleSaveMetrics}
           onClose={() => setShowMetricsForm(false)}
+        />
+      )}
+      {showSettings && (
+        <HealthSettingsSheet
+          settings={settings}
+          onSave={handleSaveSettings}
+          onClose={() => setShowSettings(false)}
         />
       )}
     </>

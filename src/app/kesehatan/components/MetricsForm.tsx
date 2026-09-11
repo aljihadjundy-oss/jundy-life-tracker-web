@@ -12,7 +12,7 @@ export default function MetricsForm({
 }: {
   date: string;
   initial: DailyMetrics | null;
-  onSubmit: (data: DailyMetrics) => Promise<void>;
+  onSubmit: (date: string, patch: Partial<DailyMetrics>) => Promise<void>;
   onClose: () => void;
 }) {
   const [sleepHours, setSleepHours] = useState(initial ? String(initial.sleepHours) : "");
@@ -25,8 +25,7 @@ export default function MetricsForm({
     e.preventDefault();
     setSubmitting(true);
     try {
-      await onSubmit({
-        date,
+      await onSubmit(date, {
         sleepHours: Number(sleepHours) || 0,
         exerciseMinutes: Number(exerciseMinutes) || 0,
         waterGlasses: Number(waterGlasses) || 0,

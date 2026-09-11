@@ -102,6 +102,27 @@ async function dueTaskReminders(db, uid, today, nowWall) {
   return due;
 }
 
+/**
+ * Rima's bedtime nudge: 30 minutes before the sleep time set in the Kesehatan
+ * module. Bedtime is a time of day, so the window wraps around midnight; the
+ * stamp on the notifications doc keeps it to once per night.
+ */
+const BEDTIME_LEAD = 30;
+
+function bedtimeReminderDue(health, settings, nowMinutes, today) {
+  if (!health || !/^\d{2}:\d{2}$/.test(health.bedtime || "")) return null;
+
+  const bed = minutesFromHHmm(health.bedtime);
+  const remindAt = (bed - BEDTIME_LEAD + 1440) % 1440;
+  // Cyclic distance, so a 00:15 bedtime still matches a 23:45 tick.
+  const elapsed = (nowMinutes - remindAt + 1440) % 1440;
+  if (elapsed >= BEDTIME_LEAD) return null;
+
+  const slot = `${today}T${health.bedtime}`;
+  if (settings.bedtimeNotifiedFor === slot) return null;
+  return slot;
+}
+
 async function pruneInvalidTokens(db, uid, tokens, responses) {
   const invalid = [];
   responses.forEach((res, i) => {
@@ -154,6 +175,21 @@ exports.sendDailyReminders = onSchedule(
         });
       }
 
+      const healthSnap = await db.doc(`users/${uid}/settings/health`).get();
+      const bedtimeSlot = bedtimeReminderDue(
+        healthSnap.data(),
+        settings,
+        minutesFromHHmm(currentTime),
+        today
+      );
+      if (bedtimeSlot) {
+        messages.push({
+          title: "Waktunya siap-siap tidur",
+          body: `${BEDTIME_LEAD} menit lagi jam tidurmu.`,
+          link: "/kesehatan",
+        });
+      }
+
       const reminders = await dueTaskReminders(db, uid, today, nowWall);
       for (const { task, minutesLeft } of reminders) {
         messages.push({
@@ -184,10 +220,13 @@ exports.sendDailyReminders = onSchedule(
         }
       }
 
-      // Stamp the slot last: if the send above threw, the next tick retries
+      // Stamp the slots last: if a send above threw, the next tick retries
       // rather than silently swallowing the reminder.
       for (const { ref, slot } of reminders) {
         await ref.update({ notifiedFor: slot });
+      }
+      if (bedtimeSlot) {
+        await db.doc(`users/${uid}/settings/notifications`).update({ bedtimeNotifiedFor: bedtimeSlot });
       }
     }
   }
