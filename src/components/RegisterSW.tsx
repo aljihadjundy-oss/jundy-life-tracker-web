@@ -18,14 +18,82 @@ function buildSwUrl() {
   return `/sw.js?firebaseConfig=${encoded}`;
 }
 
+/** Don't hammer the network checking for a new worker on every tab switch. */
+const UPDATE_THROTTLE_MS = 60_000;
+
 export default function RegisterSW() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return;
     if (!("serviceWorker" in navigator)) return;
 
-    navigator.serviceWorker.register(buildSwUrl()).catch((err) => {
-      console.error("Service worker registration failed:", err);
-    });
+    // Whether this page was already under a worker's control when it loaded.
+    // On a first-ever visit the worker calls clients.claim(), which also fires
+    // controllerchange — reloading then would be a pointless flash, so the
+    // reload below only runs for a genuine version swap.
+    const wasControlled = navigator.serviceWorker.controller !== null;
+    let reloading = false;
+    let lastUpdateCheck = 0;
+    let registration: ServiceWorkerRegistration | null = null;
+
+    function onControllerChange() {
+      if (!wasControlled || reloading) return;
+      reloading = true;
+      window.location.reload();
+    }
+
+    /**
+     * A worker that finished installing sits in "waiting" until every tab using
+     * the old one closes. An app opened from the home screen is effectively one
+     * tab that never closes, so we tell it to take over right away.
+     */
+    function promote(worker: ServiceWorker | null) {
+      if (worker && worker.state === "installed" && navigator.serviceWorker.controller) {
+        worker.postMessage("SKIP_WAITING");
+      }
+    }
+
+    function checkForUpdate() {
+      if (!registration) return;
+      const now = Date.now();
+      if (now - lastUpdateCheck < UPDATE_THROTTLE_MS) return;
+      lastUpdateCheck = now;
+      registration.update().catch(() => {
+        // Offline, or the check raced a reload. The next one will pick it up.
+      });
+    }
+
+    function onVisibility() {
+      if (document.visibilityState === "visible") checkForUpdate();
+    }
+
+    navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
+
+    navigator.serviceWorker
+      .register(buildSwUrl())
+      .then((reg) => {
+        registration = reg;
+        lastUpdateCheck = Date.now();
+
+        promote(reg.waiting);
+
+        reg.addEventListener("updatefound", () => {
+          const installing = reg.installing;
+          if (!installing) return;
+          installing.addEventListener("statechange", () => promote(installing));
+        });
+      })
+      .catch((err) => {
+        console.error("Service worker registration failed:", err);
+      });
+
+    // Reopening the app from the home screen doesn't reload the page, so
+    // without this an installed PWA could sit on an old build for a long time.
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   return null;

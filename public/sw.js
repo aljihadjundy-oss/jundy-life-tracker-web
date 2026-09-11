@@ -1,4 +1,7 @@
-const CACHE_VERSION = "v1";
+// Bump this whenever the caching rules below change. Everything cached under an
+// older name is deleted on activate, which is the only way a phone that already
+// installed the app gets rid of a stale shell.
+const CACHE_VERSION = "v2";
 const CACHE_NAME = `life-tracker-${CACHE_VERSION}`;
 
 // --- Firebase Cloud Messaging (push notifications) ---
@@ -59,6 +62,12 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// The page posts this when it spots a waiting worker, so an update never sits
+// idle until every tab is closed.
+self.addEventListener("message", (event) => {
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
+});
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   event.waitUntil(
@@ -83,10 +92,17 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Navigation requests: network-first, fall back to cached shell when offline.
+  // Navigation requests: network-first, falling back to the cached shell when
+  // offline.
+  //
+  // `cache: "no-store"` matters more than it looks. A plain fetch() here still
+  // goes through the browser's HTTP cache, so a deploy would keep serving the
+  // previous HTML — and with it the previous JS bundle — until that entry
+  // expired. On desktop a hard reload hides the problem; an installed PWA has
+  // no hard reload, so the phone just stays on the old version.
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request)
+      fetch(request.url, { cache: "no-store", credentials: "same-origin" })
         .then((response) => {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));

@@ -421,6 +421,7 @@ const id: Record<string, string> = {
   // Settings
   "settings.title": "Pengaturan",
   "settings.subtitle": "Bahasa, notifikasi & reminder",
+  "settings.buildVersion": "Versi build {version}",
   "settings.unitsTitle": "Business Unit",
   "settings.unitsHint": "Dipakai buat filter, grouping, dan tag #unit waktu import di modul Waktu.",
   "settings.unitsPlaceholder": "Nama unit baru...",
@@ -915,6 +916,7 @@ const en: Record<string, string> = {
   // Settings
   "settings.title": "Settings",
   "settings.subtitle": "Language, notifications & reminders",
+  "settings.buildVersion": "Build {version}",
   "settings.unitsTitle": "Business Units",
   "settings.unitsHint": "Used for filtering, grouping, and the #unit import tag in the Time module.",
   "settings.unitsPlaceholder": "New unit name...",

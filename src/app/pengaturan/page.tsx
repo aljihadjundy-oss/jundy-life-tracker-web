@@ -169,7 +169,31 @@ function PengaturanContent() {
         </div>
 
 <p className="px-1 text-[11px] leading-relaxed text-ink-muted">{t("settings.reminderNote")}</p>
+
+        <BuildStamp />
       </div>
     </>
+  );
+}
+
+/**
+ * Which build this device is actually running. After a deploy, an installed
+ * PWA can keep serving an older shell for a while; comparing this line between
+ * phone and laptop tells you straight away whether the update landed.
+ */
+function BuildStamp() {
+  const t = useT();
+  const stamp = process.env.NEXT_PUBLIC_BUILD_TIME;
+  if (!stamp) return null;
+
+  const built = new Date(stamp);
+  return (
+    <p className="pt-1 text-center text-[11px] text-ink-muted">
+      {t("settings.buildVersion", {
+        version: `${built.toISOString().slice(0, 10)} ${built
+          .toISOString()
+          .slice(11, 16)} UTC`,
+      })}
+    </p>
   );
 }

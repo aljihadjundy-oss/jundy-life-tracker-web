@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
+  env: {
+    // Stamped in at build time and shown at the bottom of Pengaturan, so
+    // "did my phone actually get the new version?" is a question you can
+    // answer by looking instead of guessing.
+    NEXT_PUBLIC_BUILD_TIME: new Date().toISOString(),
+  },
 };
 
 export default nextConfig;
