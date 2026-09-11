@@ -17,9 +17,12 @@ type Field = keyof ColumnMapping;
 const FIELDS: Field[] = ["date", "description", "amount", "debit", "credit"];
 
 export default function ImportSheet({
+  accounts,
   onImport,
   onClose,
 }: {
+  /** A statement belongs to one account; every imported row lands there. */
+  accounts: { id: string; name: string }[];
   onImport: (transactions: NewTransaction[]) => Promise<void>;
   onClose: () => void;
 }) {
@@ -28,6 +31,7 @@ export default function ImportSheet({
   const [hasHeader, setHasHeader] = useState(true);
   const [mapping, setMapping] = useState<ColumnMapping | null>(null);
   const [category, setCategory] = useState<string>("Lainnya");
+  const [accountId, setAccountId] = useState(accounts[0]?.id ?? "");
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -53,8 +57,8 @@ export default function ImportSheet({
   );
 
   const parsed = useMemo(
-    () => (mapping ? buildTransactions(dataRows, mapping, category) : []),
-    [dataRows, mapping, category]
+    () => (mapping ? buildTransactions(dataRows, mapping, category, accountId) : []),
+    [dataRows, mapping, category, accountId]
   );
   const valid = parsed.filter((row) => row.valid);
 
@@ -62,15 +66,11 @@ export default function ImportSheet({
     if (valid.length === 0) return;
     setImporting(true);
     try {
-      await onImport(
-        valid.map((row) => ({
-          type: row.type,
-          amount: row.amount,
-          category: row.category,
-          note: row.note,
-          date: row.date,
-        }))
-      );
+      await onImport(valid.map((row) => {
+          const { valid: _ignored, ...rest } = row;
+          void _ignored;
+          return rest;
+        }));
       onClose();
     } finally {
       setImporting(false);
@@ -166,6 +166,24 @@ export default function ImportSheet({
                 </button>
               ))}
             </div>
+
+            {accounts.length > 0 && (
+              <>
+                <h3 className="mb-2 text-xs font-bold text-ink">{t("money.account")}</h3>
+                <select
+                  value={accountId}
+                  onChange={(e) => setAccountId(e.target.value)}
+                  className="mb-4 w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-sm text-ink outline-none focus:border-ink"
+                >
+                  <option value="">{t("money.noAccount")}</option>
+                  {accounts.map((account) => (
+                    <option key={account.id} value={account.id}>
+                      {account.name}
+                    </option>
+                  ))}
+                </select>
+              </>
+            )}
 
             <h3 className="mb-2 text-xs font-bold text-ink">
               {t("import.preview", { valid: valid.length, total: parsed.length })}

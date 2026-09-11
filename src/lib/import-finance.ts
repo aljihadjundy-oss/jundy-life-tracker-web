@@ -100,7 +100,9 @@ export type ParsedRow = NewTransaction & { valid: boolean };
 export function buildTransactions(
   rows: string[][],
   mapping: ColumnMapping,
-  category: string
+  category: string,
+  /** Statements come from one account, so every row lands in that account. */
+  accountId = ""
 ): ParsedRow[] {
   return rows.map((row) => {
     const date = parseDate(row[mapping.date] ?? "");
@@ -125,6 +127,18 @@ export function buildTransactions(
       }
     }
 
-    return { date, note, amount, type, category, valid: Boolean(date) && amount > 0 };
+    return {
+      date,
+      note,
+      amount,
+      type,
+      category,
+      accountId,
+      toAccountId: "",
+      needWant: "",
+      fixed: false,
+      status: "done",
+      valid: Boolean(date) && amount > 0,
+    };
   });
 }

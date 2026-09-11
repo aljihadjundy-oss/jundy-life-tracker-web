@@ -1,41 +1,76 @@
 "use client";
 
 import { useState } from "react";
-import type { NewTransaction, TransactionType } from "@/types/finance";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/types/finance";
+import {
+  TRANSACTION_TYPES,
+  TRANSFER_CATEGORY,
+  categoriesFor,
+  type Account,
+  type NeedWant,
+  type NewTransaction,
+  type Transaction,
+  type TransactionStatus,
+  type TransactionType,
+} from "@/types/finance";
 import { todayISO } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import Sheet, { AmountInput, Field, inputClass } from "./Sheet";
+
+const NEED_WANT: NeedWant[] = ["", "need", "want"];
+const STATUSES: TransactionStatus[] = ["done", "pending"];
 
 export default function TransactionForm({
+  initial,
+  accounts,
   onSubmit,
+  onDelete,
   onClose,
 }: {
+  initial?: Transaction | null;
+  accounts: Account[];
   onSubmit: (data: NewTransaction) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
   onClose: () => void;
 }) {
-  const [type, setType] = useState<TransactionType>("expense");
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState<string>(EXPENSE_CATEGORIES[0]);
-  const [note, setNote] = useState("");
-  const [date, setDate] = useState(todayISO());
-  const [submitting, setSubmitting] = useState(false);
   const t = useT();
+  const [type, setType] = useState<TransactionType>(initial?.type ?? "expense");
+  const [amount, setAmount] = useState(initial ? String(initial.amount) : "");
+  const [category, setCategory] = useState(initial?.category ?? "Makan");
+  const [date, setDate] = useState(initial?.date ?? todayISO());
+  const [accountId, setAccountId] = useState(initial?.accountId ?? accounts[0]?.id ?? "");
+  const [toAccountId, setToAccountId] = useState(initial?.toAccountId ?? "");
+  const [needWant, setNeedWant] = useState<NeedWant>(initial?.needWant ?? "");
+  const [fixed, setFixed] = useState(initial?.fixed ?? false);
+  const [status, setStatus] = useState<TransactionStatus>(initial?.status ?? "done");
+  const [note, setNote] = useState(initial?.note ?? "");
+  const [submitting, setSubmitting] = useState(false);
 
-  const categories = type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  const categories = categoriesFor(type);
 
-  function switchType(next: TransactionType) {
+  function changeType(next: TransactionType) {
     setType(next);
-    setCategory(next === "expense" ? EXPENSE_CATEGORIES[0] : INCOME_CATEGORIES[0]);
+    // Keep the category valid for the new type.
+    const list = categoriesFor(next);
+    if (!list.includes(category)) setCategory(list[0]);
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const numericAmount = Number(amount);
-    if (!numericAmount || numericAmount <= 0) return;
-
+  async function submit() {
+    const value = Number(amount) || 0;
+    if (value <= 0) return;
     setSubmitting(true);
     try {
-      await onSubmit({ type, amount: numericAmount, category, note: note.trim(), date });
+      await onSubmit({
+        type,
+        amount: value,
+        category: type === "transfer" ? TRANSFER_CATEGORY : category,
+        note: note.trim(),
+        date,
+        accountId,
+        toAccountId: type === "transfer" ? toAccountId : "",
+        needWant: type === "expense" ? needWant : "",
+        fixed,
+        status,
+      });
       onClose();
     } finally {
       setSubmitting(false);
@@ -43,99 +78,181 @@ export default function TransactionForm({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
-      <form
-        onSubmit={handleSubmit}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full rounded-t-3xl bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl animate-[slideUp_0.25s_ease-out]"
-      >
-        <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" />
-
-        <div className="mb-4 flex rounded-xl bg-surface-raised p-1">
+    <Sheet
+      title={initial ? t("money.editTransaction") : t("finance.newTransaction")}
+      onClose={onClose}
+      onSubmit={submit}
+      submitting={submitting}
+      onDelete={
+        initial && onDelete
+          ? async () => {
+              await onDelete(initial.id);
+              onClose();
+            }
+          : undefined
+      }
+    >
+      <div className="mb-4 flex gap-2">
+        {TRANSACTION_TYPES.map((option) => (
           <button
+            key={option}
             type="button"
-            onClick={() => switchType("expense")}
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
-              type === "expense" ? "bg-surface-card text-ink shadow-sm" : "text-ink-muted"
+            onClick={() => changeType(option)}
+            className={`flex-1 rounded-full px-3 py-2.5 text-xs font-bold transition ${
+              type === option
+                ? option === "income"
+                  ? "bg-accent-finance text-white"
+                  : option === "expense"
+                    ? "bg-red-500 text-white"
+                    : "bg-accent-time text-white"
+                : "bg-surface-raised text-ink-muted"
             }`}
           >
-            {t("finance.expense")}
+            {t(`money.type.${option}`)}
           </button>
-          <button
-            type="button"
-            onClick={() => switchType("income")}
-            className={`flex-1 rounded-lg py-2 text-sm font-semibold transition ${
-              type === "income" ? "bg-surface-card text-ink shadow-sm" : "text-ink-muted"
-            }`}
-          >
-            {t("finance.income")}
-          </button>
-        </div>
+        ))}
+      </div>
 
-        <label className="mb-4 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("finance.amount")}</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            required
-            min={1}
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0"
-            className="w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-lg font-semibold text-ink outline-none focus:border-ink"
-          />
-        </label>
+      <Field label={t("finance.amount")}>
+        <AmountInput value={amount} onChange={setAmount} autoFocus={!initial} />
+      </Field>
 
+      {type !== "transfer" && (
         <div className="mb-4">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("finance.category")}</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">
+            {t("finance.category")}
+          </span>
           <div className="flex flex-wrap gap-2">
-            {categories.map((c) => (
+            {categories.map((option) => (
               <button
-                key={c}
+                key={option}
                 type="button"
-                onClick={() => setCategory(c)}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
-                  category === c
-                    ? "bg-ink text-surface"
-                    : "bg-surface-raised text-ink-muted"
+                onClick={() => setCategory(option)}
+                className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
+                  category === option ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
                 }`}
               >
-                {t(`category.${c}`)}
+                {t(`category.${option}`)}
               </button>
             ))}
           </div>
         </div>
+      )}
 
-        <label className="mb-4 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("finance.date")}</span>
-          <input
-            type="date"
-            required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-sm text-ink outline-none focus:border-ink"
-          />
-        </label>
+      <Field label={t("finance.date")}>
+        <input
+          type="date"
+          required
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className={`${inputClass} tabular-nums`}
+        />
+      </Field>
 
-        <label className="mb-5 block">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("finance.note")}</span>
-          <input
-            type="text"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={t("finance.notePlaceholder")}
-            className="w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-sm text-ink outline-none focus:border-ink"
-          />
-        </label>
+      {accounts.length > 0 && (
+        <Field label={type === "transfer" ? t("money.fromAccount") : t("money.account")}>
+          <select
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+            className={inputClass}
+          >
+            <option value="">{t("money.noAccount")}</option>
+            {accounts.map((account) => (
+              <option key={account.id} value={account.id}>
+                {account.name}
+              </option>
+            ))}
+          </select>
+        </Field>
+      )}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full rounded-2xl bg-ink py-4 text-sm font-bold text-surface transition active:scale-95 disabled:opacity-50"
+      {type === "transfer" && accounts.length > 0 && (
+        <Field label={t("money.toAccount")}>
+          <select
+            value={toAccountId}
+            onChange={(e) => setToAccountId(e.target.value)}
+            className={inputClass}
+          >
+            <option value="">{t("money.noAccount")}</option>
+            {accounts
+              .filter((account) => account.id !== accountId)
+              .map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+          </select>
+        </Field>
+      )}
+
+      {type === "expense" && (
+        <div className="mb-4">
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">
+            {t("money.needWant")}
+          </span>
+          <div className="flex gap-2">
+            {NEED_WANT.map((option) => (
+              <button
+                key={option || "none"}
+                type="button"
+                onClick={() => setNeedWant(option)}
+                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition ${
+                  needWant === option ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+                }`}
+              >
+                {t(`money.needWant.${option || "none"}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="mb-4 flex gap-2">
+        {STATUSES.map((option) => (
+          <button
+            key={option}
+            type="button"
+            onClick={() => setStatus(option)}
+            className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition ${
+              status === option ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+            }`}
+          >
+            {t(`money.status.${option}`)}
+          </button>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        onClick={() => setFixed((v) => !v)}
+        className="mb-4 flex w-full items-center justify-between rounded-2xl bg-surface-raised p-4 text-left"
+      >
+        <span className="min-w-0 pr-3">
+          <span className="block text-xs font-semibold text-ink">{t("money.fixed")}</span>
+          <span className="block text-[11px] text-ink-muted">{t("money.fixedHint")}</span>
+        </span>
+        <span
+          className={`relative h-6 w-11 shrink-0 rounded-full transition ${
+            fixed ? "bg-accent-time" : "bg-border"
+          }`}
         >
-          {submitting ? t("app.saving") : t("finance.saveTransaction")}
-        </button>
-      </form>
-    </div>
+          <span
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${
+              fixed ? "left-[1.375rem]" : "left-0.5"
+            }`}
+          />
+        </span>
+      </button>
+
+      <Field label={t("finance.note")}>
+        <input
+          type="text"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder={t("finance.notePlaceholder")}
+          className={inputClass}
+        />
+      </Field>
+    </Sheet>
   );
 }

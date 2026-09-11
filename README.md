@@ -86,7 +86,7 @@ firebase deploy         # deploy hosting + firestore rules + functions (kalau ud
 ```
 src/
   app/                  # routes (App Router) — 1 folder per modul
-    keuangan/            # transaksi, budget bulanan
+    keuangan/            # net worth, transaksi, budget per kategori, rekening, utang, target
       components/
     waktu/                # task ops: kalender, filter, grouping, strike, ringkasan
       components/
@@ -111,8 +111,16 @@ firestore.rules           # data di-lock per uid (users/{uid}/...)
 ## Data Model (Firestore)
 
 ```
-users/{uid}/transactions/{id}     → { type, amount, category, note, date, createdAt }
-users/{uid}/settings/finance      → { monthlyBudget }
+users/{uid}/transactions/{id}     → { type (income|expense|transfer), amount, category, note,
+                                      date, accountId, toAccountId, needWant, fixed, status,
+                                      createdAt }
+users/{uid}/accounts/{id}         → { name, type, openingBalance, asOf, note, createdAt }
+users/{uid}/budgets/{id}          → { month, category, planned, createdAt }
+users/{uid}/debts/{id}            → { name, creditor, principal, remaining, installment,
+                                      dueDate, interest, note, status, createdAt }
+users/{uid}/goals/{id}            → { name, targetAmount, currentAmount, deadline, priority,
+                                      type, createdAt }
+users/{uid}/settings/finance      → { monthlyBudget, allocationBase, allocations: [...] }
 users/{uid}/tasks/{id}            → { title, note, dueDate, startTime, durationMinutes,
                                       reminderMinutes, status, category, owner, unit, link,
                                       source, createdAt, completedAt, notifiedFor }

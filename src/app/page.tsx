@@ -6,15 +6,16 @@ import AppShell from "@/components/AppShell";
 import TopBar from "@/components/TopBar";
 import SettingsLink from "@/components/SettingsLink";
 import { useAuth } from "@/lib/auth-context";
-import { subscribeTransactions } from "@/lib/finance";
+import { subscribeAccounts, subscribeDebts, subscribeTransactions } from "@/lib/finance";
 import { subscribeTasks } from "@/lib/waktu";
 import { subscribeContent } from "@/lib/branding";
 import { subscribeHabitLogs, subscribeHabits } from "@/lib/kesehatan";
-import type { Transaction } from "@/types/finance";
+import type { Account, Debt, Transaction } from "@/types/finance";
 import { isOpen, type Task } from "@/types/waktu";
 import type { ContentItem } from "@/types/branding";
 import type { Habit, HabitLog } from "@/types/kesehatan";
 import { formatCurrency, currentMonthKey, todayISO, addDaysISO } from "@/lib/format";
+import { netWorth } from "@/lib/money";
 import { useT } from "@/lib/i18n";
 import GameHeader from "@/components/GameHeader";
 import BadgeCoverflow from "@/components/BadgeCoverflow";
@@ -41,6 +42,8 @@ function DashboardContent() {
   const { user } = useAuth();
   const t = useT();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [debts, setDebts] = useState<Debt[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [content, setContent] = useState<ContentItem[]>([]);
   const [habits, setHabits] = useState<Habit[]>([]);
@@ -50,6 +53,8 @@ function DashboardContent() {
   useEffect(() => {
     if (!user) return;
     const unsubTx = subscribeTransactions(user.uid, setTransactions);
+    const unsubAccounts = subscribeAccounts(user.uid, setAccounts);
+    const unsubDebts = subscribeDebts(user.uid, setDebts);
     const unsubTasks = subscribeTasks(user.uid, setTasks);
     const unsubContent = subscribeContent(user.uid, setContent);
     const unsubHabits = subscribeHabits(user.uid, setHabits);
@@ -57,6 +62,8 @@ function DashboardContent() {
     const unsubStats = subscribeStats(user.uid, setGameStats);
     return () => {
       unsubTx();
+      unsubAccounts();
+      unsubDebts();
       unsubTasks();
       unsubContent();
       unsubHabits();
@@ -65,18 +72,26 @@ function DashboardContent() {
     };
   }, [user]);
 
-  const { balance, monthExpense } = useMemo(() => {
+  // Once accounts exist, net worth is the number worth leading with. Without
+  // them there is nothing to total, so this falls back to plain cashflow.
+  // Transfers move money between your own accounts and are excluded either way.
+  const { headline, headlineLabel, monthExpense } = useMemo(() => {
     const month = currentMonthKey();
     let income = 0;
     let expense = 0;
     let monthExpense = 0;
-    for (const t of transactions) {
-      if (t.type === "income") income += t.amount;
-      else expense += t.amount;
-      if (t.type === "expense" && t.date.startsWith(month)) monthExpense += t.amount;
+    for (const tx of transactions) {
+      if (tx.type === "income") income += tx.amount;
+      else if (tx.type === "expense") expense += tx.amount;
+      if (tx.type === "expense" && tx.date.startsWith(month)) monthExpense += tx.amount;
     }
-    return { balance: income - expense, monthExpense };
-  }, [transactions]);
+
+    if (accounts.length > 0) {
+      const worth = netWorth(accounts, transactions, debts);
+      return { headline: worth.net, headlineLabel: "home.netWorth", monthExpense };
+    }
+    return { headline: income - expense, headlineLabel: "home.balance", monthExpense };
+  }, [transactions, accounts, debts]);
 
   const { todayTaskCount, overdueTaskCount } = useMemo(() => {
     const today = todayISO();
@@ -130,8 +145,8 @@ function DashboardContent() {
     {
       href: "/keuangan",
       gradient: "from-brand-start via-brand-mid to-brand-end",
-      label: t("home.balance"),
-      value: formatCurrency(balance),
+      label: t(headlineLabel),
+      value: formatCurrency(headline),
       hint: t("home.monthExpense", { amount: formatCurrency(monthExpense) }),
     },
     {

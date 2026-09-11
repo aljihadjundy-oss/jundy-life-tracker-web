@@ -20,10 +20,16 @@ const CATEGORY_EMOJI: Record<string, string> = {
   Investasi: "📈",
   Hadiah: "🎀",
   Lainnya: "✨",
+  "Kos / kontrakan": "🏠",
+  Hutang: "🧧",
+  Rokok: "🚬",
+  Freelance: "💻",
 };
 
 export default function TransactionCard({
   transaction,
+  accountName,
+  onOpen,
   onDelete,
   selectMode,
   selected,
@@ -31,6 +37,9 @@ export default function TransactionCard({
   onLongPress,
 }: {
   transaction: Transaction;
+  /** Name of the account it moved through, "" when unassigned. */
+  accountName: string;
+  onOpen: (transaction: Transaction) => void;
   onDelete: (id: string) => void;
   selectMode: boolean;
   selected: boolean;
@@ -41,6 +50,7 @@ export default function TransactionCard({
   const t = useT();
   const longPress = useLongPress(() => onLongPress(transaction.id), !selectMode);
   const isIncome = transaction.type === "income";
+  const isTransfer = transaction.type === "transfer";
 
   return (
     <div
@@ -56,20 +66,53 @@ export default function TransactionCard({
         </div>
       ) : (
         <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-raised text-lg">
-          {CATEGORY_EMOJI[transaction.category] ?? "✨"}
+          {isTransfer ? "⇄" : (CATEGORY_EMOJI[transaction.category] ?? "✨")}
         </div>
       )}
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-ink">{t(`category.${transaction.category}`)}</p>
+      <button
+        onClick={() => (selectMode ? onToggleSelect(transaction.id) : onOpen(transaction))}
+        className="min-w-0 flex-1 text-left"
+      >
+        <p className="truncate text-sm font-semibold text-ink">
+          {t(`category.${transaction.category}`)}
+        </p>
         <p className="truncate text-xs text-ink-muted">
           {transaction.note || t("finance.noNote")}
+          {accountName ? ` · ${accountName}` : ""}
         </p>
-      </div>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          {transaction.needWant && (
+            <span
+              className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                transaction.needWant === "need"
+                  ? "bg-accent-finance/15 text-accent-finance"
+                  : "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+              }`}
+            >
+              {t(`money.needWant.${transaction.needWant}`)}
+            </span>
+          )}
+          {transaction.fixed && (
+            <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-ink-muted">
+              {t("money.fixed")}
+            </span>
+          )}
+          {transaction.status === "pending" && (
+            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400">
+              {t("money.status.pending")}
+            </span>
+          )}
+        </div>
+      </button>
 
       <div className="flex flex-col items-end gap-1">
-        <span className={`text-sm font-bold ${isIncome ? "text-accent-finance" : "text-ink"}`}>
-          {isIncome ? "+" : "-"}
+        <span
+          className={`text-sm font-bold ${
+            isIncome ? "text-accent-finance" : isTransfer ? "text-accent-time" : "text-ink"
+          }`}
+        >
+          {isIncome ? "+" : isTransfer ? "⇄ " : "−"}
           {formatCurrency(transaction.amount)}
         </span>
         {selectMode ? null : confirming ? (
