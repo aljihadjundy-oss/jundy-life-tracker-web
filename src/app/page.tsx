@@ -18,6 +18,7 @@ import { formatCurrency, currentMonthKey, todayISO, addDaysISO } from "@/lib/for
 import { useT } from "@/lib/i18n";
 import GameHeader from "@/components/GameHeader";
 import BadgeCoverflow from "@/components/BadgeCoverflow";
+import SummaryCoverflow, { type SummaryCard } from "@/components/SummaryCoverflow";
 import { subscribeStats } from "@/lib/gamification";
 import { EMPTY_STATS, type GameStats } from "@/types/gamification";
 
@@ -125,6 +126,43 @@ function DashboardContent() {
 
   const firstName = user?.displayName?.split(" ")[0] ?? "";
 
+  const summaryCards: SummaryCard[] = [
+    {
+      href: "/keuangan",
+      gradient: "from-brand-start via-brand-mid to-brand-end",
+      label: t("home.balance"),
+      value: formatCurrency(balance),
+      hint: t("home.monthExpense", { amount: formatCurrency(monthExpense) }),
+    },
+    {
+      href: "/waktu",
+      gradient: "from-blue-500 via-indigo-500 to-violet-500",
+      label: t("home.todayTasks"),
+      value:
+        t("home.taskCount", { count: todayTaskCount }) +
+        (overdueTaskCount > 0 ? t("home.taskOverdue", { count: overdueTaskCount }) : ""),
+      hint: t("home.tapAgenda"),
+    },
+    {
+      href: "/branding",
+      gradient: "from-fuchsia-500 via-pink-500 to-rose-400",
+      label: t("home.postingConsistency"),
+      value: streak > 0 ? t("home.streakDays", { count: streak }) : t("home.noStreak"),
+      hint: t("home.tapCalendar"),
+    },
+    {
+      href: "/kesehatan",
+      gradient: "from-orange-500 via-red-500 to-rose-500",
+      label: t("home.habitStreak"),
+      value:
+        habitStreak > 0 ? t("home.streakDays", { count: habitStreak }) : t("home.noStreak"),
+      hint:
+        totalHabits > 0
+          ? t("home.habitDone", { done: doneToday, total: totalHabits })
+          : t("home.tapStartTracking"),
+    },
+  ];
+
   return (
     <>
       <TopBar
@@ -152,56 +190,7 @@ function DashboardContent() {
         </div>
       </section>
 
-      <section className="mt-5 flex flex-col gap-3 px-5">
-        <Link
-          href="/keuangan"
-          className="block rounded-3xl bg-gradient-to-br from-brand-start via-brand-mid to-brand-end p-5 text-white shadow-lg shadow-brand-mid/20 transition active:scale-[0.98]"
-        >
-          <p className="text-xs font-medium text-white/80">{t("home.balance")}</p>
-          <p className="mt-1 text-2xl font-extrabold tracking-tight">{formatCurrency(balance)}</p>
-          <p className="mt-3 text-xs text-white/85">
-            {t("home.monthExpense", { amount: formatCurrency(monthExpense) })}
-          </p>
-        </Link>
-
-        <Link
-          href="/waktu"
-          className="block rounded-3xl bg-gradient-to-br from-blue-500 via-indigo-500 to-violet-500 p-5 text-white shadow-lg shadow-indigo-500/20 transition active:scale-[0.98]"
-        >
-          <p className="text-xs font-medium text-white/80">{t("home.todayTasks")}</p>
-          <p className="mt-1 text-2xl font-extrabold tracking-tight">
-            {t("home.taskCount", { count: todayTaskCount })}
-            {overdueTaskCount > 0 ? t("home.taskOverdue", { count: overdueTaskCount }) : ""}
-          </p>
-          <p className="mt-3 text-xs text-white/85">{t("home.tapAgenda")}</p>
-        </Link>
-
-        <Link
-          href="/branding"
-          className="block rounded-3xl bg-gradient-to-br from-fuchsia-500 via-pink-500 to-rose-400 p-5 text-white shadow-lg shadow-pink-500/20 transition active:scale-[0.98]"
-        >
-          <p className="text-xs font-medium text-white/80">{t("home.postingConsistency")}</p>
-          <p className="mt-1 text-2xl font-extrabold tracking-tight">
-            {streak > 0 ? t("home.streakDays", { count: streak }) : t("home.noStreak")}
-          </p>
-          <p className="mt-3 text-xs text-white/85">{t("home.tapCalendar")}</p>
-        </Link>
-
-        <Link
-          href="/kesehatan"
-          className="block rounded-3xl bg-gradient-to-br from-orange-500 via-red-500 to-rose-500 p-5 text-white shadow-lg shadow-orange-500/20 transition active:scale-[0.98]"
-        >
-          <p className="text-xs font-medium text-white/80">{t("home.habitStreak")}</p>
-          <p className="mt-1 text-2xl font-extrabold tracking-tight">
-            {habitStreak > 0 ? t("home.streakDays", { count: habitStreak }) : t("home.noStreak")}
-          </p>
-          <p className="mt-3 text-xs text-white/85">
-            {totalHabits > 0
-              ? t("home.habitDone", { done: doneToday, total: totalHabits })
-              : t("home.tapStartTracking")}
-          </p>
-        </Link>
-      </section>
+      <SummaryCoverflow cards={summaryCards} />
 
       <BadgeCoverflow stats={gameStats} />
     </>

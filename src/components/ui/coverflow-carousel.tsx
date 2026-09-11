@@ -32,6 +32,8 @@ export interface CoverflowCarouselProps {
   fade?: number;
   /** Any CSS length. Everything else is derived from it, so the rake scales. */
   cardWidth?: string;
+  /** Defaults to a square card. Give it any CSS length for a different shape. */
+  cardHeight?: string;
   /** Space between cards, as a fraction of card width. */
   gap?: number;
   loop?: boolean;
@@ -42,6 +44,9 @@ export interface CoverflowCarouselProps {
   label?: string;
   /** Fired when the centred card changes, so callers can react to selection. */
   onSelect?: (index: number) => void;
+  /** Fired when the centred card is tapped. Tapping a neighbour centres it
+      instead, so a card is always confirmed before it can be acted on. */
+  onCardActivate?: (index: number) => void;
   className?: string;
   cardClassName?: string;
 }
@@ -54,6 +59,7 @@ export function CoverflowCarousel({
   falloff = 0.56,
   fade = 0.1,
   cardWidth = "clamp(148px, 22vw, 260px)",
+  cardHeight,
   gap = 0.05,
   loop = true,
   showCaption = false,
@@ -61,6 +67,7 @@ export function CoverflowCarousel({
   showNavigation = false,
   label = "Cover carousel",
   onSelect,
+  onCardActivate,
   className,
   cardClassName,
 }: CoverflowCarouselProps) {
@@ -87,6 +94,9 @@ export function CoverflowCarousel({
   } | null>(null);
 
   const [selected, setSelected] = React.useState(0);
+  /** Set once a gesture is unmistakably a drag, so the click it ends with
+      doesn't also read as a tap on whichever card landed under the finger. */
+  const draggedRef = React.useRef(false);
 
   // Readers who ask for less motion get the flat, upright strip: no rake, no
   // easing, just the card they picked.
@@ -209,6 +219,7 @@ export function CoverflowCarousel({
       rafRef.current = null;
     }
     targetRef.current = posRef.current;
+    draggedRef.current = false;
     dragRef.current = {
       id: event.pointerId,
       x: event.clientX,
@@ -233,6 +244,7 @@ export function CoverflowCarousel({
     if (drag.horizontal === null) {
       if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
       drag.horizontal = Math.abs(dx) > Math.abs(dy);
+      if (drag.horizontal) draggedRef.current = true;
       if (!drag.horizontal) {
         dragRef.current = null;
         return;
@@ -329,7 +341,7 @@ export function CoverflowCarousel({
           <div
             className="relative select-none"
             style={{
-              height: "var(--cf-card)",
+              height: cardHeight ?? "var(--cf-card)",
               transformStyle: "preserve-3d",
             }}
           >
@@ -342,11 +354,20 @@ export function CoverflowCarousel({
                 role="group"
                 aria-roledescription="slide"
                 aria-label={`${index + 1} of ${count}`}
+                onClick={() => {
+                  if (draggedRef.current) return;
+                  if (index === selected) onCardActivate?.(index);
+                  else goTo(index);
+                }}
                 className={cn(
-                  "absolute left-1/2 top-0 aspect-square overflow-hidden rounded-2xl bg-surface-raised shadow-xl will-change-transform",
+                  "absolute left-1/2 top-0 overflow-hidden rounded-2xl bg-surface-raised shadow-xl will-change-transform",
+                  onCardActivate && "cursor-pointer",
                   cardClassName,
                 )}
-                style={{ width: "var(--cf-card)" }}
+                style={{
+                  width: "var(--cf-card)",
+                  height: cardHeight ?? "var(--cf-card)",
+                }}
               >
                 {slide.src ? (
                   // eslint-disable-next-line @next/next/no-img-element
