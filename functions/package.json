@@ -1,6 +1,6 @@
 {
   "name": "functions",
-  "description": "Scheduled reminder push notifications for Jundy Life Tracker",
+  "description": "Scheduled reminder push notifications for Andropid",
   "private": true,
   "engines": {
     "node": "20"

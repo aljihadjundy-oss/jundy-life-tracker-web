@@ -20,7 +20,7 @@ export default function LoginPage() {
     <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-surface px-6 text-center">
       <div className="flex flex-col items-center gap-3">
         <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-start to-brand-end text-3xl font-bold text-white shadow-lg shadow-brand-start/30">
-          JL
+          A
         </div>
         <h1 className="text-2xl font-bold text-ink">{t("app.name")}</h1>
         <p className="max-w-xs text-sm text-ink-muted">{t("app.tagline")}</p>

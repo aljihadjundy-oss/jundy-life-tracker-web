@@ -1,4 +1,8 @@
-# Jundy Life Tracker
+# Andropid
+
+> *anthropoid* (ἀνθρωποειδής) — menyerupai manusia. Namanya sinis dengan sengaja:
+> manusia cuma monyet yang kebetulan bisa mikir. Aplikasi ini buat ngelacak
+> seberapa jauh mikirnya kepakai.
 
 Personal life tracker — mobile-first PWA. 5 modul, semua jalan end-to-end (auth → input → Firestore → tampil di UI):
 **Keuangan**, **Waktu**, **Branding**, **Kesehatan**, **Jurnal** — plus gamifikasi ala Duolingo (XP, level, streak, lencana), dwibahasa Indonesia/English, dan reminder push notification harian.

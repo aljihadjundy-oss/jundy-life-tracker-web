@@ -1,7 +1,7 @@
 {
-  "name": "Jundy Life Tracker",
-  "short_name": "Life Tracker",
-  "description": "Personal life tracker — keuangan, waktu, branding, dan kesehatan dalam satu app.",
+  "name": "Andropid",
+  "short_name": "Andropid",
+  "description": "Keuangan, waktu, branding, kesehatan, dan jurnal — dalam satu app.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

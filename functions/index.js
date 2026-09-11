@@ -182,7 +182,7 @@ exports.sendDailyReminders = onSchedule(
 
       if (settings.reminderTime === currentTime) {
         messages.push({
-          title: "Life Tracker",
+          title: "Andropid",
           body: await buildSummary(db, uid, today),
           link: "/",
         });

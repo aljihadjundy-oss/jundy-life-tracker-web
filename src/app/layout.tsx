@@ -16,13 +16,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Jundy Life Tracker",
-  description: "Personal life tracker — keuangan, waktu, branding, kesehatan.",
+  title: "Andropid",
+  description: "Keuangan, waktu, branding, kesehatan, dan jurnal — dalam satu tempat.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Life Tracker",
+    title: "Andropid",
   },
   icons: {
     icon: "/icons/icon-192.png",

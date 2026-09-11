@@ -207,7 +207,7 @@ function WaktuContent() {
 
   function handleExport() {
     const csv = tasksToCsv(tasks, settings.strikes, t);
-    downloadCsv(`task-tracker_${todayISO()}.csv`, csv);
+    downloadCsv(`andropid-tasks_${todayISO()}.csv`, csv);
   }
 
   return (

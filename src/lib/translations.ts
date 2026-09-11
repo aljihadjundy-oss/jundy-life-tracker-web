@@ -7,7 +7,7 @@ export const LANGUAGES: { value: Lang; label: string }[] = [
 
 const id: Record<string, string> = {
   // App shell
-  "app.name": "Jundy Life Tracker",
+  "app.name": "Andropid",
 
   "onboarding.hello": "Halo! Kenalan dulu ya.",
   "onboarding.helloSub": "Beberapa pertanyaan singkat, biar aplikasinya nyesuain sama kamu.",
@@ -50,7 +50,7 @@ const id: Record<string, string> = {
   "health.noneNote": "Fokus ke kebiasaan, tidur, dan gerak.",
   "health.movementFor.none": "Gerak untuk minggu ini",
 
-  "app.tagline": "Keuangan, waktu, branding, dan kesehatan — semua dalam satu tempat.",
+  "app.tagline": "Keuangan, waktu, branding, kesehatan, dan jurnal — semua dalam satu tempat.",
   "app.signInGoogle": "Masuk dengan Google",
   "app.signOut": "Keluar",
   "app.settings": "Pengaturan",
@@ -681,7 +681,7 @@ const id: Record<string, string> = {
 
 const en: Record<string, string> = {
   // App shell
-  "app.name": "Jundy Life Tracker",
+  "app.name": "Andropid",
 
   "onboarding.hello": "Hi! Let's get acquainted.",
   "onboarding.helloSub": "A few quick questions so the app fits you.",
@@ -724,7 +724,7 @@ const en: Record<string, string> = {
   "health.noneNote": "Focused on habits, sleep, and movement.",
   "health.movementFor.none": "Movement for this week",
 
-  "app.tagline": "Finance, time, branding, and health — all in one place.",
+  "app.tagline": "Finance, time, branding, health, and journal — all in one place.",
   "app.signInGoogle": "Sign in with Google",
   "app.signOut": "Sign out",
   "app.settings": "Settings",

@@ -8,7 +8,7 @@
  * you can play back on the phone that recorded it.
  */
 
-const DB_NAME = "life-tracker-audio";
+const DB_NAME = "andropid-audio";
 const STORE = "clips";
 
 function open(): Promise<IDBDatabase> {

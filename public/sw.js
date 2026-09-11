@@ -2,7 +2,7 @@
 // older name is deleted on activate, which is the only way a phone that already
 // installed the app gets rid of a stale shell.
 const CACHE_VERSION = "v2";
-const CACHE_NAME = `life-tracker-${CACHE_VERSION}`;
+const CACHE_NAME = `andropid-${CACHE_VERSION}`;
 
 // --- Firebase Cloud Messaging (push notifications) ---
 // Config arrives via the registration URL's query string (see
@@ -28,7 +28,7 @@ const CACHE_NAME = `life-tracker-${CACHE_VERSION}`;
   const messaging = firebase.messaging();
 
   messaging.onBackgroundMessage((payload) => {
-    const title = payload.notification?.title ?? "Life Tracker";
+    const title = payload.notification?.title ?? "Andropid";
     const options = {
       body: payload.notification?.body ?? "",
       icon: "/icons/icon-192.png",
