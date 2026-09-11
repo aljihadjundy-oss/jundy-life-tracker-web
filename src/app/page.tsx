@@ -17,7 +17,7 @@ import type { Habit, HabitLog } from "@/types/kesehatan";
 import { formatCurrency, currentMonthKey, todayISO, addDaysISO } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import GameHeader from "@/components/GameHeader";
-import BadgeGrid from "@/components/BadgeGrid";
+import BadgeCoverflow from "@/components/BadgeCoverflow";
 import { subscribeStats } from "@/lib/gamification";
 import { EMPTY_STATS, type GameStats } from "@/types/gamification";
 
@@ -203,7 +203,7 @@ function DashboardContent() {
         </Link>
       </section>
 
-      <BadgeGrid stats={gameStats} />
+      <BadgeCoverflow stats={gameStats} />
     </>
   );
 }
