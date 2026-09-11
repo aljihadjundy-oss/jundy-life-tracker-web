@@ -53,10 +53,22 @@ export default function JournalCard({
           )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-ink">{entry.title || t("journal.untitled")}</p>
-            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-muted">
+            <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-ink-muted">
+              {/* Jenis hanya ditampilkan untuk naskah — menempeli setiap catatan
+                  harian dengan label "Jurnal" cuma mengulang nama halamannya. */}
+              {entry.type !== "journal" && (
+                <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-ink">
+                  {t(`journal.type.${entry.type}`)}
+                </span>
+              )}
+              {entry.favorite && <span aria-label={t("journal.favorite")}>★</span>}
+              {entry.finished && <span aria-label={t("journal.finished")}>✓</span>}
               {formatDate(entry.date)}
               {entry.hasAudio && <span aria-label={t("journal.voiceNote")}>🎙️</span>}
             </p>
+            {entry.description && (
+              <p className="mt-1 line-clamp-1 text-xs italic text-ink-muted">{entry.description}</p>
+            )}
             {preview && <p className="mt-1.5 line-clamp-2 text-xs text-ink-muted">{preview}</p>}
           </div>
         </div>

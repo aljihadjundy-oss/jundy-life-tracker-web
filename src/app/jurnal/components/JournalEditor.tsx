@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { JournalEntry, NewJournalEntry } from "@/types/journal";
-import { MOODS } from "@/types/journal";
+import { MOODS, WRITING_TYPES, type Topic, type WritingType } from "@/types/journal";
 import { formatDate, todayISO } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import { deleteClip, putClip } from "@/lib/audio-store";
@@ -16,11 +16,13 @@ type SaveState = "clean" | "dirty" | "saving" | "saved";
 
 export default function JournalEditor({
   entry,
+  topics,
   onCreate,
   onUpdate,
   onClose,
 }: {
   entry: JournalEntry | null;
+  topics: Topic[];
   /** Creates the entry and returns its new id. */
   onCreate: (data: NewJournalEntry) => string | Promise<string>;
   onUpdate: (id: string, data: Partial<NewJournalEntry>) => void | Promise<void>;
@@ -33,6 +35,12 @@ export default function JournalEditor({
   const [hasAudio, setHasAudio] = useState(entry?.hasAudio ?? false);
   const [audioSeconds, setAudioSeconds] = useState(entry?.audioSeconds ?? 0);
   const [date] = useState(entry?.date ?? todayISO());
+  const [type, setType] = useState<WritingType>(entry?.type ?? "journal");
+  const [topicIds, setTopicIds] = useState<string[]>(entry?.topicIds ?? []);
+  const [description, setDescription] = useState(entry?.description ?? "");
+  const [favorite, setFavorite] = useState(entry?.favorite ?? false);
+  const [finished, setFinished] = useState(entry?.finished ?? false);
+  const [archived] = useState(entry?.archived ?? false);
   const [state, setState] = useState<SaveState>("clean");
 
   // The id lives in both a ref and state: async code needs to read it without
@@ -44,9 +52,15 @@ export default function JournalEditor({
 
   // Read by the flush path so it always writes the newest values, even when
   // called from an event listener that closed over an older render.
-  const latest = useRef({ title, content, mood, hasAudio, audioSeconds });
+  const latest = useRef({
+    title, content, mood, hasAudio, audioSeconds,
+    type, topicIds, description, favorite, finished, archived,
+  });
   useEffect(() => {
-    latest.current = { title, content, mood, hasAudio, audioSeconds };
+    latest.current = {
+      title, content, mood, hasAudio, audioSeconds,
+      type, topicIds, description, favorite, finished, archived,
+    };
   });
 
   function rememberId(id: string) {
@@ -61,6 +75,7 @@ export default function JournalEditor({
   const flush = useCallback(async () => {
     const { title: ti, content: co, mood: mo, hasAudio: ha, audioSeconds: se } = latest.current;
     if (!ti.trim() && !co.trim() && !ha) return;
+    const meta = latest.current;
 
     // Serialise: two overlapping flushes would create two entries.
     if (inFlight.current) await inFlight.current;
@@ -74,6 +89,12 @@ export default function JournalEditor({
         date,
         hasAudio: ha,
         audioSeconds: se,
+        type: meta.type,
+        topicIds: meta.topicIds,
+        description: meta.description.trim(),
+        favorite: meta.favorite,
+        finished: meta.finished,
+        archived: meta.archived,
       };
       if (entryId.current) await onUpdate(entryId.current, data);
       else rememberId(await onCreate(data));
@@ -130,6 +151,12 @@ export default function JournalEditor({
           date,
           hasAudio: true,
           audioSeconds: seconds,
+          type,
+          topicIds,
+          description: description.trim(),
+          favorite,
+          finished,
+          archived,
         })
       );
     }
@@ -221,6 +248,104 @@ export default function JournalEditor({
               {m}
             </button>
           ))}
+        </div>
+
+        {/* Jenis tulisan. Mood tetap di atas karena itu milik catatan harian;
+            baris ini yang memutuskan sebuah entri jadi puisi, naskah, atau
+            artikel — dan itu yang menentukan tampilnya di penyaring. */}
+        <div className="mb-4 flex flex-wrap gap-2">
+          {WRITING_TYPES.map((option) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => {
+                setType(option);
+                touch();
+              }}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                type === option ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+              }`}
+            >
+              {t(`journal.type.${option}`)}
+            </button>
+          ))}
+        </div>
+
+        {/* Topik hanya muncul untuk naskah: catatan harian tidak diarsipkan
+            per topik, dan menampilkannya di sana cuma menambah bidang kosong. */}
+        {type !== "journal" && (
+          <div className="mb-4">
+            <p className="mb-1.5 text-xs font-medium text-ink-muted">{t("journal.topics")}</p>
+            {topics.length === 0 ? (
+              <p className="text-xs text-ink-muted">{t("journal.noTopicsYet")}</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {topics
+                  .filter((topic) => !topic.archived)
+                  .map((topic) => {
+                    const on = topicIds.includes(topic.id);
+                    return (
+                      <button
+                        key={topic.id}
+                        type="button"
+                        onClick={() => {
+                          setTopicIds((prev) =>
+                            on ? prev.filter((id) => id !== topic.id) : [...prev, topic.id]
+                          );
+                          touch();
+                        }}
+                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                          on ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+                        }`}
+                      >
+                        {topic.name}
+                      </button>
+                    );
+                  })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {type !== "journal" && (
+          <input
+            value={description}
+            onChange={(e) => {
+              setDescription(e.target.value);
+              touch();
+            }}
+            placeholder={t("journal.descriptionPlaceholder")}
+            className="mb-4 w-full rounded-xl border border-border bg-surface-card px-3 py-2.5 text-sm text-ink outline-none focus:border-ink"
+          />
+        )}
+
+        <div className="mb-4 flex gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setFavorite((v) => !v);
+              touch();
+            }}
+            aria-pressed={favorite}
+            className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
+              favorite ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+            }`}
+          >
+            {favorite ? "★" : "☆"} {t("journal.favorite")}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setFinished((v) => !v);
+              touch();
+            }}
+            aria-pressed={finished}
+            className={`flex-1 rounded-xl px-3 py-2.5 text-xs font-semibold transition ${
+              finished ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+            }`}
+          >
+            {finished ? "✓" : "○"} {t("journal.finished")}
+          </button>
         </div>
 
         <div className="mb-4">
