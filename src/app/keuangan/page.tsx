@@ -8,6 +8,7 @@ import {
   addTransaction,
   addTransactionsBatch,
   deleteTransaction,
+  deleteTransactions,
   setMonthlyBudget,
   subscribeMonthlyBudget,
   subscribeTransactions,
@@ -19,6 +20,8 @@ import TransactionForm from "./components/TransactionForm";
 import BudgetSheet from "./components/BudgetSheet";
 import BalanceCard from "./components/BalanceCard";
 import { useT } from "@/lib/i18n";
+import SelectionBar from "@/components/SelectionBar";
+import { useSelection } from "@/lib/useSelection";
 import { awardXp } from "@/lib/gamification";
 import { celebrate } from "@/lib/celebrate";
 import ImportSheet from "./components/ImportSheet";
@@ -40,6 +43,7 @@ function KeuanganContent() {
   const [showBudgetSheet, setShowBudgetSheet] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [loading, setLoading] = useState(true);
+  const selection = useSelection();
 
   useEffect(() => {
     if (!user) return;
@@ -78,6 +82,11 @@ function KeuanganContent() {
     await deleteTransaction(user.uid, id);
   }
 
+  async function handleBulkDelete(ids: string[]) {
+    if (!user) return;
+    await deleteTransactions(user.uid, ids);
+  }
+
   async function handleImport(imported: NewTransaction[]) {
     if (!user) return;
     await addTransactionsBatch(user.uid, imported);
@@ -105,6 +114,12 @@ function KeuanganContent() {
       <div className="mt-6 flex items-center justify-between px-5">
         <h2 className="text-sm font-bold text-ink">{t("finance.recentTransactions")}</h2>
         <div className="flex gap-2">
+          <button
+            onClick={() => (selection.active ? selection.stop() : selection.start())}
+            className="rounded-full bg-surface-raised px-3.5 py-2 text-xs font-bold text-ink-muted transition active:scale-95"
+          >
+            {selection.active ? t("app.cancel") : t("bulk.select")}
+          </button>
           <button
             onClick={() => setShowImport(true)}
             className="rounded-full bg-surface-raised px-3.5 py-2 text-xs font-bold text-ink-muted transition active:scale-95"
@@ -134,9 +149,23 @@ function KeuanganContent() {
         )}
 
         {transactions.map((tx) => (
-          <TransactionCard key={tx.id} transaction={tx} onDelete={handleDelete} />
+          <TransactionCard
+            key={tx.id}
+            transaction={tx}
+            onDelete={handleDelete}
+            selectMode={selection.active}
+            selected={selection.isSelected(tx.id)}
+            onToggleSelect={selection.toggle}
+            onLongPress={selection.start}
+          />
         ))}
       </div>
+
+      <SelectionBar
+        selection={selection}
+        allIds={transactions.map((tx) => tx.id)}
+        onDelete={handleBulkDelete}
+      />
 
       {showForm && (
         <TransactionForm onSubmit={handleAdd} onClose={() => setShowForm(false)} />

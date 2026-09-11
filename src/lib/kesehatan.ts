@@ -5,14 +5,17 @@ import {
   doc,
   getDoc,
   limit,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
+  where,
   serverTimestamp,
   setDoc,
   Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { deleteDocsBatch } from "./batch";
 import type { DailyMetrics, Habit, HabitLog, NewHabit } from "@/types/kesehatan";
 
 function habitsRef(uid: string) {
@@ -103,4 +106,23 @@ export async function getMetrics(uid: string, date: string): Promise<DailyMetric
 
 export async function setMetrics(uid: string, metrics: DailyMetrics) {
   await setDoc(doc(db, "users", uid, "metrics", metrics.date), metrics, { merge: true });
+}
+
+/**
+ * Deletes habits together with every check-in that belongs to them — leaving
+ * the logs behind would keep inflating the streak for a habit that no longer
+ * exists. Firestore caps an `in` filter at 30 values, hence the chunking.
+ */
+export async function deleteHabits(uid: string, ids: string[]) {
+  const logRefs = [];
+  for (let i = 0; i < ids.length; i += 30) {
+    const snap = await getDocs(query(habitLogsRef(uid), where("habitId", "in", ids.slice(i, i + 30))));
+    logRefs.push(...snap.docs.map((d) => d.ref));
+  }
+  await deleteDocsBatch(logRefs);
+  await deleteDocsBatch(ids.map((id) => doc(db, "users", uid, "habits", id)));
+}
+
+export function deleteMetrics(uid: string, dates: string[]) {
+  return deleteDocsBatch(dates.map((date) => doc(db, "users", uid, "metrics", date)));
 }

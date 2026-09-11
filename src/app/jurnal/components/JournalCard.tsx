@@ -4,25 +4,49 @@ import { useState } from "react";
 import type { JournalEntry } from "@/types/journal";
 import { formatDate } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import SelectCheckbox from "@/components/SelectCheckbox";
+import { useLongPress } from "@/lib/useLongPress";
 
 export default function JournalCard({
   entry,
   onOpen,
   onDelete,
+  selectMode,
+  selected,
+  onToggleSelect,
+  onLongPress,
 }: {
   entry: JournalEntry;
   onOpen: (entry: JournalEntry) => void;
   onDelete: (id: string) => void;
+  selectMode: boolean;
+  selected: boolean;
+  onToggleSelect: (id: string) => void;
+  onLongPress: (id: string) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   const t = useT();
+  const longPress = useLongPress(() => onLongPress(entry.id), !selectMode);
   const preview = entry.content.replace(/\s+/g, " ").trim().slice(0, 90);
 
   return (
-    <div className="rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border/60">
-      <button onClick={() => onOpen(entry)} className="block w-full text-left">
+    <div
+      {...longPress}
+      className={`rounded-2xl bg-surface-card p-4 shadow-sm ring-1 transition ${
+        selected ? "ring-2 ring-brand-start" : "ring-border/60"
+      }`}
+    >
+      <button
+        onClick={() => (selectMode ? onToggleSelect(entry.id) : onOpen(entry))}
+        className="block w-full text-left"
+      >
         <div className="flex items-start gap-3">
-          {entry.mood && (
+          {selectMode && (
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+              <SelectCheckbox checked={selected} />
+            </div>
+          )}
+          {!selectMode && entry.mood && (
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-raised text-lg">
               {entry.mood}
             </div>
@@ -35,7 +59,7 @@ export default function JournalCard({
         </div>
       </button>
 
-      <div className="mt-2 flex justify-end">
+      <div className={`mt-2 flex justify-end ${selectMode ? "hidden" : ""}`}>
         {confirming ? (
           <div className="flex gap-2">
             <button onClick={() => onDelete(entry.id)} className="text-[11px] font-semibold text-red-500">

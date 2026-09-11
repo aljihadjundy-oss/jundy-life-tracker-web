@@ -11,6 +11,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { deleteDocsBatch } from "./batch";
 import type { ContentItem, ContentStatus, NewContentItem } from "@/types/branding";
 
 function contentRef(uid: string) {
@@ -50,4 +51,8 @@ export async function updateContentStatus(uid: string, id: string, status: Conte
 
 export async function deleteContent(uid: string, id: string) {
   await deleteDoc(doc(db, "users", uid, "content", id));
+}
+
+export function deleteContents(uid: string, ids: string[]) {
+  return deleteDocsBatch(ids.map((id) => doc(db, "users", uid, "content", id)));
 }

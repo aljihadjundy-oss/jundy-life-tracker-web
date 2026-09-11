@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   addHabit,
   deleteHabit,
+  deleteHabits,
   setHabitLog,
   setMetrics,
   subscribeHabitLogs,
@@ -22,6 +23,8 @@ import MetricsForm from "./components/MetricsForm";
 import HabitCard from "./components/HabitCard";
 import HabitForm from "./components/HabitForm";
 import { useT } from "@/lib/i18n";
+import SelectionBar from "@/components/SelectionBar";
+import { useSelection } from "@/lib/useSelection";
 import { awardXp } from "@/lib/gamification";
 import { celebrate } from "@/lib/celebrate";
 
@@ -40,6 +43,7 @@ function KesehatanContent() {
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [metricsList, setMetricsList] = useState<DailyMetrics[]>([]);
   const [loading, setLoading] = useState(true);
+  const selection = useSelection();
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const [showHabitForm, setShowHabitForm] = useState(false);
   const [showMetricsForm, setShowMetricsForm] = useState(false);
@@ -115,6 +119,11 @@ function KesehatanContent() {
     await deleteHabit(user.uid, id);
   }
 
+  async function handleBulkDeleteHabits(ids: string[]) {
+    if (!user) return;
+    await deleteHabits(user.uid, ids);
+  }
+
   async function handleToggleHabit(habitId: string, next: boolean) {
     if (!user) return;
     await setHabitLog(user.uid, habitId, selectedDate, next);
@@ -143,12 +152,20 @@ function KesehatanContent() {
 
       <div className="mt-5 flex items-center justify-between px-5">
         <h2 className="text-sm font-bold text-ink">{t("health.habitChecklist")}</h2>
-        <button
-          onClick={() => setShowHabitForm(true)}
-          className="flex items-center gap-1 rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
-        >
-          {t("app.add")}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => (selection.active ? selection.stop() : selection.start())}
+            className="rounded-full bg-surface-raised px-3.5 py-2 text-xs font-bold text-ink-muted transition active:scale-95"
+          >
+            {selection.active ? t("app.cancel") : t("bulk.select")}
+          </button>
+          <button
+            onClick={() => setShowHabitForm(true)}
+            className="rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
+          >
+            {t("app.add")}
+          </button>
+        </div>
       </div>
 
       <div className="mt-3 flex flex-col gap-2.5 px-5 pb-6">
@@ -171,9 +188,19 @@ function KesehatanContent() {
             completed={selectedCompletedIds.has(h.id)}
             onToggle={handleToggleHabit}
             onDelete={handleDeleteHabit}
+            selectMode={selection.active}
+            selected={selection.isSelected(h.id)}
+            onToggleSelect={selection.toggle}
+            onLongPress={selection.start}
           />
         ))}
       </div>
+
+      <SelectionBar
+        selection={selection}
+        allIds={habits.map((h) => h.id)}
+        onDelete={handleBulkDeleteHabits}
+      />
 
       {showHabitForm && <HabitForm onSubmit={handleAddHabit} onClose={() => setShowHabitForm(false)} />}
       {showMetricsForm && (

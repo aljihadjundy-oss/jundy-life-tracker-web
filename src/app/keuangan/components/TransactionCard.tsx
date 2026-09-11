@@ -4,6 +4,8 @@ import { useState } from "react";
 import type { Transaction } from "@/types/finance";
 import { formatCurrency } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+import SelectCheckbox from "@/components/SelectCheckbox";
+import { useLongPress } from "@/lib/useLongPress";
 
 const CATEGORY_EMOJI: Record<string, string> = {
   Makan: "🍜",
@@ -23,19 +25,40 @@ const CATEGORY_EMOJI: Record<string, string> = {
 export default function TransactionCard({
   transaction,
   onDelete,
+  selectMode,
+  selected,
+  onToggleSelect,
+  onLongPress,
 }: {
   transaction: Transaction;
   onDelete: (id: string) => void;
+  selectMode: boolean;
+  selected: boolean;
+  onToggleSelect: (id: string) => void;
+  onLongPress: (id: string) => void;
 }) {
   const [confirming, setConfirming] = useState(false);
   const t = useT();
+  const longPress = useLongPress(() => onLongPress(transaction.id), !selectMode);
   const isIncome = transaction.type === "income";
 
   return (
-    <div className="flex items-center gap-3 rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border/60">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-raised text-lg">
-        {CATEGORY_EMOJI[transaction.category] ?? "✨"}
-      </div>
+    <div
+      {...longPress}
+      onClick={() => selectMode && onToggleSelect(transaction.id)}
+      className={`flex items-center gap-3 rounded-2xl bg-surface-card p-4 shadow-sm ring-1 transition ${
+        selected ? "ring-2 ring-accent-finance" : "ring-border/60"
+      }`}
+    >
+      {selectMode ? (
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center">
+          <SelectCheckbox checked={selected} />
+        </div>
+      ) : (
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-raised text-lg">
+          {CATEGORY_EMOJI[transaction.category] ?? "✨"}
+        </div>
+      )}
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-ink">{t(`category.${transaction.category}`)}</p>
@@ -49,7 +72,7 @@ export default function TransactionCard({
           {isIncome ? "+" : "-"}
           {formatCurrency(transaction.amount)}
         </span>
-        {confirming ? (
+        {selectMode ? null : confirming ? (
           <div className="flex gap-2">
             <button
               onClick={() => onDelete(transaction.id)}

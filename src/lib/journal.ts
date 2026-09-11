@@ -11,6 +11,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { deleteDocsBatch } from "./batch";
 import type { JournalEntry, NewJournalEntry } from "@/types/journal";
 
 function journalRef(uid: string) {
@@ -55,4 +56,8 @@ export async function updateEntry(uid: string, id: string, entry: NewJournalEntr
 
 export async function deleteEntry(uid: string, id: string) {
   await deleteDoc(doc(db, "users", uid, "journal", id));
+}
+
+export function deleteEntries(uid: string, ids: string[]) {
+  return deleteDocsBatch(ids.map((id) => doc(db, "users", uid, "journal", id)));
 }

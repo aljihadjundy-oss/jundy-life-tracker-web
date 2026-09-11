@@ -12,6 +12,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import { deleteDocsBatch } from "./batch";
 import type { NewTransaction, Transaction } from "@/types/finance";
 
 function transactionsRef(uid: string) {
@@ -76,4 +77,8 @@ export function subscribeMonthlyBudget(uid: string, onData: (budget: number) => 
 
 export async function setMonthlyBudget(uid: string, amount: number) {
   await setDoc(financeSettingsRef(uid), { monthlyBudget: amount }, { merge: true });
+}
+
+export function deleteTransactions(uid: string, ids: string[]) {
+  return deleteDocsBatch(ids.map((id) => doc(db, "users", uid, "transactions", id)));
 }

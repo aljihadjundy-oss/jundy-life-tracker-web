@@ -4,11 +4,14 @@ import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import TopBar from "@/components/TopBar";
 import { useAuth } from "@/lib/auth-context";
-import { addEntry, deleteEntry, subscribeEntries, updateEntry } from "@/lib/journal";
+import { addEntry, deleteEntry,
+  deleteEntries, subscribeEntries, updateEntry } from "@/lib/journal";
 import type { JournalEntry, NewJournalEntry } from "@/types/journal";
 import JournalCard from "./components/JournalCard";
 import JournalEditor from "./components/JournalEditor";
 import { useT } from "@/lib/i18n";
+import SelectionBar from "@/components/SelectionBar";
+import { useSelection } from "@/lib/useSelection";
 import { awardXp } from "@/lib/gamification";
 import { celebrate } from "@/lib/celebrate";
 
@@ -25,6 +28,7 @@ function JurnalContent() {
   const t = useT();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const selection = useSelection();
   const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
   const [showEditor, setShowEditor] = useState(false);
 
@@ -62,18 +66,31 @@ function JurnalContent() {
     await deleteEntry(user.uid, id);
   }
 
+  async function handleBulkDelete(ids: string[]) {
+    if (!user) return;
+    await deleteEntries(user.uid, ids);
+  }
+
   return (
     <>
       <TopBar title={t("journal.title")} subtitle={t("journal.subtitle")} />
 
       <div className="mt-2 flex items-center justify-between px-5">
         <h2 className="text-sm font-bold text-ink">{t("journal.allEntries")}</h2>
+        <div className="flex gap-2">
+        <button
+          onClick={() => (selection.active ? selection.stop() : selection.start())}
+          className="rounded-full bg-surface-raised px-3.5 py-2 text-xs font-bold text-ink-muted transition active:scale-95"
+        >
+          {selection.active ? t("app.cancel") : t("bulk.select")}
+        </button>
         <button
           onClick={openNew}
           className="flex items-center gap-1 rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
         >
           {t("journal.write")}
         </button>
+        </div>
       </div>
 
       <div className="mt-3 flex flex-col gap-2.5 px-5 pb-6">
@@ -90,9 +107,24 @@ function JurnalContent() {
         )}
 
         {entries.map((entry) => (
-          <JournalCard key={entry.id} entry={entry} onOpen={openEntry} onDelete={handleDelete} />
+          <JournalCard
+            key={entry.id}
+            entry={entry}
+            onOpen={openEntry}
+            onDelete={handleDelete}
+            selectMode={selection.active}
+            selected={selection.isSelected(entry.id)}
+            onToggleSelect={selection.toggle}
+            onLongPress={selection.start}
+          />
         ))}
       </div>
+
+      <SelectionBar
+        selection={selection}
+        allIds={entries.map((entry) => entry.id)}
+        onDelete={handleBulkDelete}
+      />
 
       {showEditor && (
         <JournalEditor entry={editingEntry} onSave={handleSave} onClose={() => setShowEditor(false)} />

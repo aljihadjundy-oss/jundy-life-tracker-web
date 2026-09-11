@@ -4,7 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import AppShell from "@/components/AppShell";
 import TopBar from "@/components/TopBar";
 import { useAuth } from "@/lib/auth-context";
-import { addContent, deleteContent, subscribeContent, updateContentStatus } from "@/lib/branding";
+import {
+  addContent,
+  deleteContent,
+  deleteContents,
+  subscribeContent,
+  updateContentStatus,
+} from "@/lib/branding";
 import type { ContentItem, ContentStatus, NewContentItem } from "@/types/branding";
 import { addDaysISO, todayISO } from "@/lib/format";
 import ConsistencyCard from "./components/ConsistencyCard";
@@ -12,6 +18,8 @@ import PlatformChips from "./components/PlatformChips";
 import ContentCard from "./components/ContentCard";
 import ContentForm from "./components/ContentForm";
 import { useT } from "@/lib/i18n";
+import SelectionBar from "@/components/SelectionBar";
+import { useSelection } from "@/lib/useSelection";
 import { awardXp } from "@/lib/gamification";
 import { celebrate } from "@/lib/celebrate";
 import YouTubeCard from "./components/YouTubeCard";
@@ -29,6 +37,7 @@ function BrandingContent() {
   const t = useT();
   const [content, setContent] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const selection = useSelection();
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
 
@@ -90,6 +99,11 @@ function BrandingContent() {
     await deleteContent(user.uid, id);
   }
 
+  async function handleBulkDelete(ids: string[]) {
+    if (!user) return;
+    await deleteContents(user.uid, ids);
+  }
+
   return (
     <>
       <TopBar title={t("branding.title")} subtitle={t("branding.subtitle")} />
@@ -100,12 +114,20 @@ function BrandingContent() {
 
       <div className="mt-5 flex items-center justify-between px-5">
         <h2 className="text-sm font-bold text-ink">{t("branding.contentCalendar")}</h2>
+        <div className="flex gap-2">
+        <button
+          onClick={() => (selection.active ? selection.stop() : selection.start())}
+          className="rounded-full bg-surface-raised px-3.5 py-2 text-xs font-bold text-ink-muted transition active:scale-95"
+        >
+          {selection.active ? t("app.cancel") : t("bulk.select")}
+        </button>
         <button
           onClick={() => setShowForm(true)}
           className="flex items-center gap-1 rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
         >
           {t("app.add")}
         </button>
+        </div>
       </div>
 
       <div className="mt-3">
@@ -130,9 +152,24 @@ function BrandingContent() {
         )}
 
         {filteredContent.map((item) => (
-          <ContentCard key={item.id} item={item} onCycleStatus={handleCycleStatus} onDelete={handleDelete} />
+          <ContentCard
+            key={item.id}
+            item={item}
+            onCycleStatus={handleCycleStatus}
+            onDelete={handleDelete}
+            selectMode={selection.active}
+            selected={selection.isSelected(item.id)}
+            onToggleSelect={selection.toggle}
+            onLongPress={selection.start}
+          />
         ))}
       </div>
+
+      <SelectionBar
+        selection={selection}
+        allIds={filteredContent.map((item) => item.id)}
+        onDelete={handleBulkDelete}
+      />
 
       {showForm && <ContentForm onSubmit={handleAdd} onClose={() => setShowForm(false)} />}
     </>
