@@ -3,24 +3,34 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n";
+import { useUserConfig } from "@/lib/user-context";
+import type { PillarKey } from "@/types/profile";
 
-const NAV_ITEMS = [
-  { href: "/", labelKey: "nav.home", icon: HomeIcon },
-  { href: "/keuangan", labelKey: "nav.finance", icon: WalletIcon },
-  { href: "/waktu", labelKey: "nav.time", icon: CalendarIcon },
-  { href: "/branding", labelKey: "nav.branding", icon: SparkIcon },
-  { href: "/kesehatan", labelKey: "nav.health", icon: HeartIcon },
-  { href: "/jurnal", labelKey: "nav.journal", icon: PenIcon },
-] as const;
+// `pillar: null` marks a tab that is always present.
+const NAV_ITEMS: {
+  href: string;
+  labelKey: string;
+  icon: (props: { className?: string; strokeWidth?: number }) => React.ReactElement;
+  pillar: PillarKey | null;
+}[] = [
+  { href: "/", labelKey: "nav.home", icon: HomeIcon, pillar: null },
+  { href: "/keuangan", labelKey: "nav.finance", icon: WalletIcon, pillar: "finance" },
+  { href: "/waktu", labelKey: "nav.time", icon: CalendarIcon, pillar: "time" },
+  { href: "/branding", labelKey: "nav.branding", icon: SparkIcon, pillar: "branding" },
+  { href: "/kesehatan", labelKey: "nav.health", icon: HeartIcon, pillar: "health" },
+  { href: "/jurnal", labelKey: "nav.journal", icon: PenIcon, pillar: "journal" },
+];
 
 export default function BottomNav() {
   const pathname = usePathname();
   const t = useT();
+  const { pillars } = useUserConfig();
+  const items = NAV_ITEMS.filter((item) => item.pillar === null || pillars[item.pillar]);
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/90 backdrop-blur-lg">
       <div className="mx-auto flex max-w-md items-center justify-between px-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
-        {NAV_ITEMS.map((item) => {
+        {items.map((item) => {
           const active = pathname === item.href;
           const Icon = item.icon;
           return (

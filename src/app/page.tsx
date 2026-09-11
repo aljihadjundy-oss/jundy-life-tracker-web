@@ -21,14 +21,24 @@ import GameHeader from "@/components/GameHeader";
 import BadgeCoverflow from "@/components/BadgeCoverflow";
 import SummaryCoverflow, { type SummaryCard } from "@/components/SummaryCoverflow";
 import { subscribeStats } from "@/lib/gamification";
+import { useUserConfig } from "@/lib/user-context";
+import ProfileCard from "@/components/ProfileCard";
+import { enabledPillars, type PillarKey } from "@/types/profile";
 import { EMPTY_STATS, type GameStats } from "@/types/gamification";
 
-const MODULES = [
-  { href: "/keuangan", labelKey: "home.modules.finance", emoji: "💰", gradient: "from-emerald-400 to-teal-500" },
-  { href: "/waktu", labelKey: "home.modules.time", emoji: "🗓️", gradient: "from-blue-400 to-indigo-500" },
-  { href: "/branding", labelKey: "home.modules.branding", emoji: "✨", gradient: "from-pink-400 to-fuchsia-500" },
-  { href: "/kesehatan", labelKey: "home.modules.health", emoji: "❤️", gradient: "from-orange-400 to-red-500" },
-] as const;
+const MODULES: {
+  pillar: PillarKey;
+  href: string;
+  labelKey: string;
+  emoji: string;
+  gradient: string;
+}[] = [
+  { pillar: "finance", href: "/keuangan", labelKey: "home.modules.finance", emoji: "💰", gradient: "from-emerald-400 to-teal-500" },
+  { pillar: "time", href: "/waktu", labelKey: "home.modules.time", emoji: "🗓️", gradient: "from-blue-400 to-indigo-500" },
+  { pillar: "branding", href: "/branding", labelKey: "home.modules.branding", emoji: "✨", gradient: "from-pink-400 to-fuchsia-500" },
+  { pillar: "health", href: "/kesehatan", labelKey: "home.modules.health", emoji: "❤️", gradient: "from-orange-400 to-red-500" },
+  { pillar: "journal", href: "/jurnal", labelKey: "home.modules.journal", emoji: "📝", gradient: "from-violet-400 to-purple-500" },
+];
 
 export default function HomePage() {
   return (
@@ -41,6 +51,7 @@ export default function HomePage() {
 function DashboardContent() {
   const { user } = useAuth();
   const t = useT();
+  const { profile, pillars } = useUserConfig();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -139,10 +150,11 @@ function DashboardContent() {
     return { habitStreak, doneToday, totalHabits: habits.length };
   }, [habits, habitLogs]);
 
-  const firstName = user?.displayName?.split(" ")[0] ?? "";
+  const firstName = profile.displayName || (user?.displayName?.split(" ")[0] ?? "");
 
-  const summaryCards: SummaryCard[] = [
+  const allSummaryCards: (SummaryCard & { pillar: PillarKey })[] = [
     {
+      pillar: "finance",
       href: "/keuangan",
       gradient: "from-brand-start via-brand-mid to-brand-end",
       label: t(headlineLabel),
@@ -150,6 +162,7 @@ function DashboardContent() {
       hint: t("home.monthExpense", { amount: formatCurrency(monthExpense) }),
     },
     {
+      pillar: "time",
       href: "/waktu",
       gradient: "from-blue-500 via-indigo-500 to-violet-500",
       label: t("home.todayTasks"),
@@ -159,6 +172,7 @@ function DashboardContent() {
       hint: t("home.tapAgenda"),
     },
     {
+      pillar: "branding",
       href: "/branding",
       gradient: "from-fuchsia-500 via-pink-500 to-rose-400",
       label: t("home.postingConsistency"),
@@ -166,6 +180,7 @@ function DashboardContent() {
       hint: t("home.tapCalendar"),
     },
     {
+      pillar: "health",
       href: "/kesehatan",
       gradient: "from-orange-500 via-red-500 to-rose-500",
       label: t("home.habitStreak"),
@@ -178,6 +193,9 @@ function DashboardContent() {
     },
   ];
 
+  const summaryCards: SummaryCard[] = allSummaryCards.filter((card) => pillars[card.pillar]);
+  const modules = MODULES.filter((module) => pillars[module.pillar]);
+
   return (
     <>
       <TopBar
@@ -186,13 +204,21 @@ function DashboardContent() {
         extra={<SettingsLink />}
       />
 
-      <div className="mt-2">
+      <div className="mt-3">
+        <ProfileCard
+          profile={profile}
+          photoURL={user?.photoURL ?? null}
+          activePillars={enabledPillars(pillars).length}
+        />
+      </div>
+
+      <div className="mt-3">
         <GameHeader stats={gameStats} />
       </div>
 
       <section className="mt-5 px-5">
         <div className="no-scrollbar flex gap-4 overflow-x-auto pb-2">
-          {MODULES.map((m) => (
+          {modules.map((m) => (
             <Link key={m.href} href={m.href} className="flex flex-col items-center gap-1.5">
               <div className={`flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br ${m.gradient} p-[2.5px]`}>
                 <div className="flex h-full w-full items-center justify-center rounded-full bg-surface text-2xl">
@@ -205,7 +231,7 @@ function DashboardContent() {
         </div>
       </section>
 
-      <SummaryCoverflow cards={summaryCards} />
+      {summaryCards.length > 0 && <SummaryCoverflow cards={summaryCards} />}
 
       <BadgeCoverflow stats={gameStats} />
     </>

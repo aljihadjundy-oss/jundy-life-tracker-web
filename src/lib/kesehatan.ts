@@ -135,6 +135,7 @@ export function subscribeHealthSettings(uid: string, onData: (settings: HealthSe
     onData({
       ...DEFAULT_HEALTH_SETTINGS,
       ...data,
+      bodyModeSet: typeof data.bodyMode === "string",
       // Nested objects would otherwise be replaced wholesale by a partial doc.
       meals: data.meals ?? DEFAULT_HEALTH_SETTINGS.meals,
       exercisePrefs: { ...DEFAULT_HEALTH_SETTINGS.exercisePrefs, ...data.exercisePrefs },

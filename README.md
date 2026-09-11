@@ -129,13 +129,17 @@ users/{uid}/habits/{id}           → { name, createdAt }
 users/{uid}/habitLogs/{date_habitId} → { habitId, date }
 users/{uid}/metrics/{date}        → { date, sleepHours, exerciseMinutes, waterGlasses,
                                       energy, mood, symptoms, mealsDone, exercise }
-users/{uid}/journal/{id}          → { title, content, mood, date, createdAt, updatedAt }
+users/{uid}/journal/{id}          → { title, content, mood, date, hasAudio, audioSeconds,
+                                      createdAt, updatedAt }
+                                    (audio itself: IndexedDB on the recording device, not synced)
 users/{uid}/settings/notifications → { enabled, reminderTime, fcmTokens: [...], bedtimeNotifiedFor }
 users/{uid}/settings/health       → { bodyMode, cycleStart, cycleLength, periodLength, dueDate,
                                       waterTarget, meals, bedtime, wakeTime, exercisePrefs }
 users/{uid}/settings/branding     → { youtubeChannel }
 users/{uid}/settings/waktu        → { units: [...], strikes: { "<owner>": 0-3 } }
 users/{uid}/gamification/stats    → { totalXp, dailyGoal, xpByDate, unlockedBadges, counters }
+users/{uid}/settings/profile      → { displayName, gender, birthDate, occupation, onboardedAt }
+users/{uid}/settings/pillars      → { finance, time, branding, health, journal }
 ```
 
 ## Kenapa gak ada reminder ke WhatsApp?

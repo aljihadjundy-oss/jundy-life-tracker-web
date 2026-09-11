@@ -10,6 +10,7 @@ import type { JournalEntry, NewJournalEntry } from "@/types/journal";
 import JournalCard from "./components/JournalCard";
 import JournalEditor from "./components/JournalEditor";
 import { useT } from "@/lib/i18n";
+import { deleteClip } from "@/lib/audio-store";
 import SelectionBar from "@/components/SelectionBar";
 import { useSelection } from "@/lib/useSelection";
 import { awardXp } from "@/lib/gamification";
@@ -51,24 +52,28 @@ function JurnalContent() {
     setShowEditor(true);
   }
 
-  async function handleSave(data: NewJournalEntry) {
+  async function handleCreate(data: NewJournalEntry) {
+    if (!user) throw new Error("not signed in");
+    const id = await addEntry(user.uid, data);
+    celebrate(await awardXp(user.uid, "journal"));
+    return id;
+  }
+
+  async function handleUpdate(id: string, data: Partial<NewJournalEntry>) {
     if (!user) return;
-    if (editingEntry) {
-      await updateEntry(user.uid, editingEntry.id, data);
-    } else {
-      await addEntry(user.uid, data);
-      celebrate(await awardXp(user.uid, "journal"));
-    }
+    await updateEntry(user.uid, id, data);
   }
 
   async function handleDelete(id: string) {
     if (!user) return;
     await deleteEntry(user.uid, id);
+    await deleteClip(id);
   }
 
   async function handleBulkDelete(ids: string[]) {
     if (!user) return;
     await deleteEntries(user.uid, ids);
+    await Promise.all(ids.map(deleteClip));
   }
 
   return (
@@ -127,7 +132,12 @@ function JurnalContent() {
       />
 
       {showEditor && (
-        <JournalEditor entry={editingEntry} onSave={handleSave} onClose={() => setShowEditor(false)} />
+        <JournalEditor
+          entry={editingEntry}
+          onCreate={handleCreate}
+          onUpdate={handleUpdate}
+          onClose={() => setShowEditor(false)}
+        />
       )}
     </>
   );

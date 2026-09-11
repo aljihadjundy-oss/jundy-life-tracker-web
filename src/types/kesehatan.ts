@@ -54,9 +54,14 @@ export const EMPTY_METRICS = (date: string): DailyMetrics => ({
 // Body mode & cycle
 // ---------------------------------------------------------------------------
 
-export type BodyMode = "cycle" | "pregnant" | "breastfeeding";
+/**
+ * "none" is the mode for someone who doesn't track a cycle. It is the default
+ * unless the profile says otherwise — a cycle tracker has no business showing
+ * up for a user who has no use for one.
+ */
+export type BodyMode = "none" | "cycle" | "pregnant" | "breastfeeding";
 
-export const BODY_MODES: BodyMode[] = ["cycle", "pregnant", "breastfeeding"];
+export const BODY_MODES: BodyMode[] = ["none", "cycle", "pregnant", "breastfeeding"];
 
 export type Meal = {
   /** Slug used as the identifier in DailyMetrics.mealsDone. */
@@ -73,6 +78,8 @@ export type ExercisePrefs = {
 
 export type HealthSettings = {
   bodyMode: BodyMode;
+  /** True once the user has picked a mode, so the profile default stops applying. */
+  bodyModeSet: boolean;
   /** First day of the most recent period. */
   cycleStart: string;
   cycleLength: number;
@@ -125,7 +132,8 @@ export const PREGNANCY_SYMPTOMS = [
 ];
 
 export const DEFAULT_HEALTH_SETTINGS: HealthSettings = {
-  bodyMode: "cycle",
+  bodyMode: "none",
+  bodyModeSet: false,
   cycleStart: "",
   cycleLength: 28,
   periodLength: 5,

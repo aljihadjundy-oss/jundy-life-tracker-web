@@ -31,6 +31,8 @@ export function subscribeEntries(uid: string, onData: (entries: JournalEntry[]) 
         content: data.content,
         mood: data.mood ?? "",
         date: data.date,
+        hasAudio: data.hasAudio ?? false,
+        audioSeconds: data.audioSeconds ?? 0,
         createdAt,
         updatedAt,
       } as JournalEntry;
@@ -39,15 +41,17 @@ export function subscribeEntries(uid: string, onData: (entries: JournalEntry[]) 
   });
 }
 
+/** Returns the new document id so autosave can keep updating the same entry. */
 export async function addEntry(uid: string, entry: NewJournalEntry) {
-  await addDoc(journalRef(uid), {
+  const ref = await addDoc(journalRef(uid), {
     ...entry,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+  return ref.id;
 }
 
-export async function updateEntry(uid: string, id: string, entry: NewJournalEntry) {
+export async function updateEntry(uid: string, id: string, entry: Partial<NewJournalEntry>) {
   await updateDoc(doc(db, "users", uid, "journal", id), {
     ...entry,
     updatedAt: serverTimestamp(),

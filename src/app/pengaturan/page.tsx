@@ -12,6 +12,11 @@ import {
 } from "@/lib/messaging";
 import Switch from "./components/Switch";
 import UnitsCard from "./components/UnitsCard";
+import PillarsCard from "./components/PillarsCard";
+import ProfileSheet from "./components/ProfileSheet";
+import { useUserConfig } from "@/lib/user-context";
+import { saveProfile, setPillars } from "@/lib/profile";
+import { ageFrom } from "@/types/profile";
 import { setUnits, subscribeWaktuSettings } from "@/lib/waktu";
 import { DEFAULT_WAKTU_SETTINGS, type WaktuSettings } from "@/types/waktu";
 import { setLanguage, useLanguage, useT } from "@/lib/i18n";
@@ -41,6 +46,8 @@ function PengaturanContent() {
   );
   const [gameStats, setGameStats] = useState<GameStats>(EMPTY_STATS);
   const [waktuSettings, setWaktuSettings] = useState<WaktuSettings>(DEFAULT_WAKTU_SETTINGS);
+  const { profile, pillars } = useUserConfig();
+  const [showProfile, setShowProfile] = useState(false);
   const [enabling, setEnabling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,6 +96,37 @@ function PengaturanContent() {
       <TopBar title={t("settings.title")} subtitle={t("settings.subtitle")} />
 
       <div className="mt-2 flex flex-col gap-3 px-5 pb-6">
+        <button
+          onClick={() => setShowProfile(true)}
+          className="flex items-center gap-3 rounded-2xl bg-surface-card p-4 text-left shadow-sm ring-1 ring-border/60 transition active:scale-[0.99]"
+        >
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-start via-brand-mid to-brand-end text-sm font-bold text-white">
+            {(profile.displayName || "?").slice(0, 1).toUpperCase()}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-bold text-ink">
+              {profile.displayName || t("home.noName")}
+            </span>
+            <span className="block truncate text-[11px] text-ink-muted">
+              {[
+                profile.gender !== "unset" ? t(`onboarding.gender.${profile.gender}`) : "",
+                profile.occupation,
+                ageFrom(profile.birthDate) !== null
+                  ? t("home.ageYears", { count: ageFrom(profile.birthDate) ?? 0 })
+                  : "",
+              ]
+                .filter(Boolean)
+                .join(" · ") || t("settings.profileHint")}
+            </span>
+          </span>
+          <span className="shrink-0 text-xs text-ink-muted">›</span>
+        </button>
+
+        <PillarsCard
+          pillars={pillars}
+          onChange={(patch) => user && setPillars(user.uid, patch)}
+        />
+
         <div className="rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border/60">
           <h2 className="text-sm font-bold text-ink">{t("settings.language")}</h2>
           <p className="mt-1 text-xs text-ink-muted">{t("settings.languageHint")}</p>
@@ -125,10 +163,12 @@ function PengaturanContent() {
           </div>
         </div>
 
-        <UnitsCard
-          units={waktuSettings.units}
-          onChange={(units) => user && setUnits(user.uid, units)}
-        />
+        {pillars.time && (
+          <UnitsCard
+            units={waktuSettings.units}
+            onChange={(units) => user && setUnits(user.uid, units)}
+          />
+        )}
 
         <div className="rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border/60">
           <h2 className="text-sm font-bold text-ink">{t("settings.pushTitle")}</h2>
@@ -172,6 +212,16 @@ function PengaturanContent() {
 
         <BuildStamp />
       </div>
+
+      {showProfile && (
+        <ProfileSheet
+          profile={profile}
+          onSubmit={async (patch) => {
+            if (user) await saveProfile(user.uid, patch);
+          }}
+          onClose={() => setShowProfile(false)}
+        />
+      )}
     </>
   );
 }

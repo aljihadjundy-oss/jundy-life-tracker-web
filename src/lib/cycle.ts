@@ -114,6 +114,12 @@ const BANK: Record<string, Suggestion[]> = {
     { id: "shoulderStretch", minutes: 10 },
     { id: "pelvicFloor", minutes: 12 },
   ],
+  // No cycle to adapt to, so this is a plain balanced week.
+  none: [
+    { id: "strength", minutes: 35 },
+    { id: "briskWalk", minutes: 30 },
+    { id: "hipStretch", minutes: 12 },
+  ],
 };
 
 export function suggestions(
@@ -122,7 +128,7 @@ export function suggestions(
   prefs: ExercisePrefs
 ): Suggestion[] {
   const key = mode === "cycle" ? phase : mode;
-  let list = BANK[key] ?? BANK.follicular;
+  let list = BANK[key] ?? BANK.none;
   if (prefs.level === "beginner") {
     list = list.map((s) => ({ ...s, minutes: Math.max(12, s.minutes - 5) }));
   }

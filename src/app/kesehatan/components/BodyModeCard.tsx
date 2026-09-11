@@ -21,6 +21,25 @@ export default function BodyModeCard({
   const t = useT();
   const today = todayISO();
 
+  if (settings.bodyMode === "none") {
+    // Nothing cycle-shaped to show; the Body tab is just movement and habits.
+    return (
+      <Shell gradient="from-slate-600 via-slate-700 to-slate-800">
+        <p className="text-xs font-medium text-white/75">{t("health.mode.none")}</p>
+        <p className="mt-0.5 text-2xl font-extrabold tracking-tight text-white">
+          {t("health.noneHeadline")}
+        </p>
+        <p className="mt-1 text-sm text-white/85">{t("health.noneNote")}</p>
+        <button
+          onClick={onOpenSettings}
+          className="mt-4 w-full rounded-2xl bg-white/20 py-3 text-sm font-bold text-white transition active:scale-95"
+        >
+          {t("health.openSettings")}
+        </button>
+      </Shell>
+    );
+  }
+
   if (settings.bodyMode === "pregnant") {
     if (!settings.dueDate) return <SetupCard t={t} onOpenSettings={onOpenSettings} keySuffix="dueDate" />;
     const { week, trimester } = pregnancyInfo(settings.dueDate, today);

@@ -46,6 +46,8 @@ import HealthSettingsSheet from "./components/HealthSettingsSheet";
 import SelectionBar from "@/components/SelectionBar";
 import { useSelection } from "@/lib/useSelection";
 import { useT } from "@/lib/i18n";
+import { useUserConfig } from "@/lib/user-context";
+import { cycleRelevantByDefault } from "@/types/profile";
 import { awardXp } from "@/lib/gamification";
 import { celebrate } from "@/lib/celebrate";
 
@@ -64,6 +66,7 @@ export default function KesehatanPage() {
 function KesehatanContent() {
   const { user } = useAuth();
   const t = useT();
+  const { profile } = useUserConfig();
   const [habits, setHabits] = useState<Habit[]>([]);
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [metricsList, setMetricsList] = useState<DailyMetrics[]>([]);
@@ -93,6 +96,18 @@ function KesehatanContent() {
       unsubSettings();
     };
   }, [user]);
+
+  // Until the user picks a mode explicitly, it follows the profile.
+  const bodyMode = settings.bodyModeSet
+    ? settings.bodyMode
+    : cycleRelevantByDefault(profile)
+      ? "cycle"
+      : "none";
+  const effectiveSettings = useMemo(
+    () => ({ ...settings, bodyMode }),
+    [settings, bodyMode]
+  );
+  const tracksCycle = bodyMode === "cycle";
 
   const metricsByDate = useMemo(() => {
     const map = new Map<string, DailyMetrics>();
@@ -154,19 +169,19 @@ function KesehatanContent() {
     [metricsByDate, today]
   );
 
-  const phase = settings.cycleStart ? cycleInfo(settings, today).phase : "follicular";
+  const phase =
+    tracksCycle && settings.cycleStart ? cycleInfo(effectiveSettings, today).phase : "follicular";
   const movement = useMemo(
-    () => suggestions(settings.bodyMode, phase, settings.exercisePrefs),
-    [settings.bodyMode, phase, settings.exercisePrefs]
+    () => suggestions(bodyMode, phase, settings.exercisePrefs),
+    [bodyMode, phase, settings.exercisePrefs]
   );
 
-  const movementHeading =
-    settings.bodyMode === "cycle"
-      ? t("health.movementForPhase", { phase: t(`health.phase.${phase}`).toLowerCase() })
-      : t(`health.movementFor.${settings.bodyMode}`);
+  const movementHeading = tracksCycle
+    ? t("health.movementForPhase", { phase: t(`health.phase.${phase}`).toLowerCase() })
+    : t(`health.movementFor.${bodyMode}`);
 
   const selectedCompletedIds = logsByDate.get(selectedDate) ?? new Set<string>();
-  const target = waterTarget(settings);
+  const target = waterTarget(effectiveSettings);
 
   function patchToday(patch: Partial<DailyMetrics>) {
     if (!user) return;
@@ -273,7 +288,7 @@ function KesehatanContent() {
             onChange={(patch) => void handleSaveSettings(patch)}
           />
           <SymptomsCard
-            mode={settings.bodyMode}
+            mode={bodyMode}
             selected={todayMetrics.symptoms}
             onToggle={(symptom) =>
               patchToday({
@@ -289,7 +304,7 @@ function KesehatanContent() {
       {tab === "body" && (
         <div className="mt-4 flex flex-col gap-4 pb-6">
           <BodyModeCard
-            settings={settings}
+            settings={effectiveSettings}
             onPeriodStartedToday={() => void handleSaveSettings({ cycleStart: today })}
             onOpenSettings={() => setShowSettings(true)}
           />
@@ -299,8 +314,12 @@ function KesehatanContent() {
             logged={todayMetrics.exercise}
             onLog={logExercise}
           />
-          {settings.bodyMode === "cycle" && settings.cycleStart && (
-            <CycleCalendar settings={settings} monthKey={monthKey} onMonthChange={setMonthKey} />
+          {tracksCycle && settings.cycleStart && (
+            <CycleCalendar
+              settings={effectiveSettings}
+              monthKey={monthKey}
+              onMonthChange={setMonthKey}
+            />
           )}
         </div>
       )}
@@ -381,7 +400,7 @@ function KesehatanContent() {
       )}
       {showSettings && (
         <HealthSettingsSheet
-          settings={settings}
+          settings={effectiveSettings}
           onSave={handleSaveSettings}
           onClose={() => setShowSettings(false)}
         />

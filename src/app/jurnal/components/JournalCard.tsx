@@ -53,7 +53,10 @@ export default function JournalCard({
           )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-semibold text-ink">{entry.title || t("journal.untitled")}</p>
-            <p className="mt-0.5 text-xs text-ink-muted">{formatDate(entry.date)}</p>
+            <p className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-muted">
+              {formatDate(entry.date)}
+              {entry.hasAudio && <span aria-label={t("journal.voiceNote")}>🎙️</span>}
+            </p>
             {preview && <p className="mt-1.5 line-clamp-2 text-xs text-ink-muted">{preview}</p>}
           </div>
         </div>

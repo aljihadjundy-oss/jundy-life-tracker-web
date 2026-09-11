@@ -24,10 +24,20 @@ function todayISO() {
 }
 
 async function buildSummary(db, uid, today) {
+  // A pillar the user switched off should not turn up in their reminders.
+  const pillarsSnap = await db.doc(`users/${uid}/settings/pillars`).get();
+  const pillars = pillarsSnap.data() || {};
+  const wantsTime = pillars.time !== false;
+  const wantsHealth = pillars.health !== false;
+
   const [tasksSnap, habitsSnap, logsSnap] = await Promise.all([
-    db.collection(`users/${uid}/tasks`).where("dueDate", "==", today).get(),
-    db.collection(`users/${uid}/habits`).get(),
-    db.collection(`users/${uid}/habitLogs`).where("date", "==", today).get(),
+    wantsTime
+      ? db.collection(`users/${uid}/tasks`).where("dueDate", "==", today).get()
+      : { docs: [] },
+    wantsHealth ? db.collection(`users/${uid}/habits`).get() : { docs: [] },
+    wantsHealth
+      ? db.collection(`users/${uid}/habitLogs`).where("date", "==", today).get()
+      : { docs: [] },
   ]);
 
   const tasksLeft = tasksSnap.docs.filter((d) => {
@@ -193,7 +203,10 @@ exports.sendDailyReminders = onSchedule(
         });
       }
 
-      const reminders = await dueTaskReminders(db, uid, today, nowWall);
+      const pillarsSnap = await db.doc(`users/${uid}/settings/pillars`).get();
+      const timeOn = (pillarsSnap.data() || {}).time !== false;
+
+      const reminders = timeOn ? await dueTaskReminders(db, uid, today, nowWall) : [];
       for (const { task, minutesLeft } of reminders) {
         messages.push({
           title: `${minutesLeft} menit lagi: ${task.title}`,
