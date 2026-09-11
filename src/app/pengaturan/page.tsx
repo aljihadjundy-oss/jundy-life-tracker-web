@@ -12,6 +12,7 @@ import {
   type NotificationSettings,
 } from "@/lib/messaging";
 import BackupCard from "./components/BackupCard";
+import SkinCard from "./components/SkinCard";
 import Switch from "./components/Switch";
 import UnitsCard from "./components/UnitsCard";
 import PillarsCard from "./components/PillarsCard";
@@ -217,6 +218,8 @@ function PengaturanContent() {
         </div>
 
 <p className="px-1 text-[11px] leading-relaxed text-ink-muted">{t("settings.reminderNote")}</p>
+
+        <SkinCard />
 
         <BackupCard uid={user?.uid} />
 

@@ -4,23 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { useUserConfig } from "@/lib/user-context";
-import type { PillarKey } from "@/types/profile";
+import { NAV_ITEMS } from "./nav-items";
 
-// `pillar: null` marks a tab that is always present.
-const NAV_ITEMS: {
-  href: string;
-  labelKey: string;
-  icon: (props: { className?: string; strokeWidth?: number }) => React.ReactElement;
-  pillar: PillarKey | null;
-}[] = [
-  { href: "/", labelKey: "nav.home", icon: HomeIcon, pillar: null },
-  { href: "/keuangan", labelKey: "nav.finance", icon: WalletIcon, pillar: "finance" },
-  { href: "/waktu", labelKey: "nav.time", icon: CalendarIcon, pillar: "time" },
-  { href: "/branding", labelKey: "nav.branding", icon: SparkIcon, pillar: "branding" },
-  { href: "/kesehatan", labelKey: "nav.health", icon: HeartIcon, pillar: "health" },
-  { href: "/jurnal", labelKey: "nav.journal", icon: PenIcon, pillar: "journal" },
-];
-
+/**
+ * Navigasi ponsel. Di tablet dan desktop digantikan SideNav — jempol tidak
+ * menjangkau dasar layar 27 inci, dan pita melintang selebar itu memisahkan
+ * kendali dari isi yang dikendalikannya.
+ */
 export default function BottomNav() {
   const pathname = usePathname();
   const t = useT();
@@ -28,7 +18,7 @@ export default function BottomNav() {
   const items = NAV_ITEMS.filter((item) => item.pillar === null || pillars[item.pillar]);
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/90 backdrop-blur-lg">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/90 backdrop-blur-lg md:hidden">
       <div className="mx-auto flex max-w-md items-center justify-between px-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
         {items.map((item) => {
           const active = pathname === item.href;
@@ -37,6 +27,7 @@ export default function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={active ? "page" : undefined}
               className="flex flex-1 flex-col items-center gap-1 py-1.5 transition-transform active:scale-90"
             >
               <Icon
@@ -53,60 +44,5 @@ export default function BottomNav() {
         })}
       </div>
     </nav>
-  );
-}
-
-type IconProps = { className?: string; strokeWidth?: number };
-
-function HomeIcon({ className, strokeWidth }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M3 11.5 12 4l9 7.5" />
-      <path d="M5 10v9a1 1 0 0 0 1 1h4v-6h4v6h4a1 1 0 0 0 1-1v-9" />
-    </svg>
-  );
-}
-
-function WalletIcon({ className, strokeWidth }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <rect x="3" y="6" width="18" height="13" rx="2" />
-      <path d="M3 10h18" />
-      <circle cx="16.5" cy="14" r="1.2" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
-function CalendarIcon({ className, strokeWidth }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <rect x="3" y="5" width="18" height="16" rx="2" />
-      <path d="M3 10h18M8 3v4M16 3v4" />
-    </svg>
-  );
-}
-
-function SparkIcon({ className, strokeWidth }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18" />
-    </svg>
-  );
-}
-
-function HeartIcon({ className, strokeWidth }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M12 20s-7-4.4-9.5-8.8C.8 7.8 2.6 4.5 6 4a5 5 0 0 1 6 2 5 5 0 0 1 6-2c3.4.5 5.2 3.8 3.5 7.2C19 15.6 12 20 12 20z" />
-    </svg>
-  );
-}
-
-function PenIcon({ className, strokeWidth }: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M12 20h9" />
-      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
-    </svg>
   );
 }

@@ -1,7 +1,7 @@
 // Bump this whenever the caching rules below change. Everything cached under an
 // older name is deleted on activate, which is the only way a phone that already
 // installed the app gets rid of a stale shell.
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const CACHE_NAME = `andropid-${CACHE_VERSION}`;
 
 // --- Firebase Cloud Messaging (push notifications) ---

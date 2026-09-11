@@ -42,8 +42,8 @@ export default function SelectionBar({
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 px-4">
-      <div className="mx-auto max-w-md rounded-2xl bg-ink p-2.5 shadow-2xl">
+    <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 px-4 md:bottom-6 md:left-[4.5rem] lg:left-56">
+      <div className="mx-auto max-w-md rounded-2xl bg-ink p-2.5 shadow-2xl md:max-w-lg">
         {extra && <div className="mb-2 px-1">{extra}</div>}
         <div className="flex items-center gap-2">
         <button

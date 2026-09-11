@@ -2,6 +2,20 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ---------------------------------------------------------------------------
+ * Dua kulit (skin), masing-masing punya mode terang dan gelap.
+ *
+ *   data-skin="instagram"  — bawaan. Gradien ungu→merah→jingga, aksen jenuh.
+ *   data-skin="moon"       — monokrom kebiruan, berbutir, aksen diredam.
+ *
+ * Kulit dan mode terang/gelap sengaja dipisah jadi dua sumbu: "Bulan" bukan
+ * sinonim "gelap". Bulan juga punya siang — permukaan regolith yang pucat —
+ * dan memaksa kulit ini selalu gelap akan membuang separuh gunanya.
+ *
+ * Semua token didefinisikan di :root tanpa syarat lebih dulu, supaya tidak ada
+ * warna yang satu-satunya definisinya ada di dalam blok bersyarat.
+ * ------------------------------------------------------------------------- */
+
 :root {
   --surface: #ffffff;
   --surface-card: #ffffff;
@@ -18,6 +32,9 @@
   --accent-time: #3b82f6;
   --accent-branding: #ec4899;
   --accent-health: #f97316;
+
+  /* Kuat butiran tekstur. Kulit Instagram tidak memakainya. */
+  --grain: 0;
 }
 
 .dark {
@@ -27,6 +44,60 @@
   --ink: #fafafa;
   --ink-muted: #9ca3af;
   --border: #2a2a2a;
+}
+
+/* --- Kulit Bulan: siang ------------------------------------------------------
+ * Regolith: putih tulang yang sedikit hangat, bukan putih layar. Garis batas
+ * dibuat lebih tegas daripada kulit Instagram karena tanpa warna jenuh,
+ * pemisah antar kartu adalah satu-satunya yang membentuk hierarki.
+ * ------------------------------------------------------------------------- */
+:root[data-skin="moon"] {
+  --surface: #f4f4f2;
+  --surface-card: #fbfbfa;
+  --surface-raised: #e9e9e5;
+  --ink: #121316;
+  --ink-muted: #656a73;
+  --border: #d6d6d0;
+
+  /* Gradien lambang: perak dingin, bukan pelangi. */
+  --brand-start: #8d94a3;
+  --brand-mid: #4a4f5a;
+  --brand-end: #c3c7cf;
+
+  /* Aksen pilar tetap dibedakan, tapi diturunkan jenuhnya dan digeser ke
+   * dingin. Monokrom murni akan menghapus satu-satunya penanda cepat antar
+   * modul, dan itu menukar keterbacaan demi estetika. */
+  --accent-finance: #5c7a68;
+  --accent-time: #55698c;
+  --accent-branding: #7d6a8e;
+  --accent-health: #8c6f5c;
+
+  --grain: 0.055;
+}
+
+/* --- Kulit Bulan: malam ---------------------------------------------------
+ * Obsidian dengan semburat biru, bukan hitam netral: langit malam tidak pernah
+ * benar-benar abu-abu. Teks dibuat sedikit di bawah putih murni supaya tidak
+ * menyilaukan di layar OLED dalam gelap.
+ * ------------------------------------------------------------------------- */
+:root[data-skin="moon"].dark {
+  --surface: #08090c;
+  --surface-card: #101218;
+  --surface-raised: #171a21;
+  --ink: #eef0f4;
+  --ink-muted: #8b919c;
+  --border: #232733;
+
+  --brand-start: #e8ecf2;
+  --brand-mid: #aab2c0;
+  --brand-end: #6b7384;
+
+  --accent-finance: #7fa38c;
+  --accent-time: #8aa0c0;
+  --accent-branding: #a996c4;
+  --accent-health: #c0a08a;
+
+  --grain: 0.085;
 }
 
 @theme inline {
@@ -54,6 +125,28 @@ body {
   background: var(--surface);
   color: var(--ink);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Butiran. feTurbulence dipakai daripada berkas PNG supaya tidak ada aset yang
+ * perlu diunduh, dan supaya kuatnya bisa diatur lewat token. Lapisannya tetap
+ * ada di kulit Instagram tetapi dengan opacity 0, sehingga berpindah kulit
+ * tidak menambah atau membuang elemen — hanya mengubah satu angka. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  pointer-events: none;
+  opacity: var(--grain);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* Tanpa ini butirannya ikut menggelapkan layar terang. */
+  mix-blend-mode: overlay;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  body::after {
+    display: none;
+  }
 }
 
 * {

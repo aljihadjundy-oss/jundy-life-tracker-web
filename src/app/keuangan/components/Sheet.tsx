@@ -20,14 +20,14 @@ export default function Sheet({
 }) {
   const t = useT();
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 md:items-center md:p-6" onClick={onClose}>
       <form
         onClick={(e) => e.stopPropagation()}
         onSubmit={(e) => {
           e.preventDefault();
           onSubmit();
         }}
-        className="max-h-[90vh] w-full overflow-y-auto rounded-t-3xl bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl animate-[slideUp_0.25s_ease-out]"
+        className="max-h-[90vh] w-full overflow-y-auto rounded-t-3xl bg-surface p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl animate-[slideUp_0.25s_ease-out] md:max-w-lg md:rounded-3xl md:pb-5 md:animate-[popIn_0.18s_ease-out]"
       >
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" />
         <h2 className="mb-4 text-base font-extrabold text-ink">{title}</h2>

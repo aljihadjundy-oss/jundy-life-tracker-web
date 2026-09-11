@@ -42,6 +42,13 @@ export const viewport: Viewport = {
   ],
 };
 
+/**
+ * Memulihkan kulit dan mode terang/gelap SEBELUM halaman digambar.
+ *
+ * Harus berupa skrip mentah di <head>, bukan efek React: kalau menunggu React
+ * menyala, layar sempat menggambar permukaan terang lebih dulu dan pengguna
+ * yang memilih gelap akan disambut kedipan putih tiap kali membuka aplikasi.
+ */
 const THEME_INIT_SCRIPT = `
 (function () {
   try {
@@ -49,7 +56,12 @@ const THEME_INIT_SCRIPT = `
     var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     var theme = stored || (prefersDark ? 'dark' : 'light');
     if (theme === 'dark') document.documentElement.classList.add('dark');
-  } catch (e) {}
+
+    var skin = localStorage.getItem('skin');
+    document.documentElement.dataset.skin = skin === 'moon' ? 'moon' : 'instagram';
+  } catch (e) {
+    document.documentElement.dataset.skin = 'instagram';
+  }
 })();
 `;
 

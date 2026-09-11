@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useT } from "@/lib/i18n";
+import { Logo } from "@/components/Logo";
 
 /**
  * Loaded on its own, after the page is interactive. Under `output: "export"`
@@ -57,10 +58,7 @@ export default function LoginPage() {
 
       <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-8 px-6 pb-[42vh] text-center">
       <div className="flex flex-col items-center gap-3">
-        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-start to-brand-end text-3xl font-bold text-white shadow-lg shadow-brand-start/30">
-          A
-        </div>
-        <h1 className="text-2xl font-bold text-ink">{t("app.name")}</h1>
+        <Logo className="text-ink" detailed />
         <p className="max-w-xs text-sm text-ink-muted">{t("app.tagline")}</p>
       </div>
 
