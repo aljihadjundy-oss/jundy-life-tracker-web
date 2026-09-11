@@ -1,9 +1,35 @@
 "use client";
 
 import { useEffect } from "react";
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 import { useT } from "@/lib/i18n";
+
+/**
+ * Loaded on its own, after the page is interactive. Under `output: "export"`
+ * there is no server to render WebGL on, and more to the point the sign-in
+ * button must never wait on a decorative canvas.
+ */
+const Globe = dynamic(() => import("@/components/ui/globe"), { ssr: false });
+
+/**
+ * Defined at module scope so the reference is stable — the globe reads its
+ * config when it builds, and a fresh object each render would be wasted work.
+ * The markers are decoration, not data: this app tracks nothing geographic,
+ * so they are scattered rather than claiming to mean anything.
+ */
+const GLOBE_CONFIG = {
+  markers: [
+    { location: [-6.2088, 106.8456] as [number, number], size: 0.09 },
+    { location: [-3.6954, 128.1814] as [number, number], size: 0.05 },
+    { location: [-7.2575, 112.7521] as [number, number], size: 0.05 },
+    { location: [1.3521, 103.8198] as [number, number], size: 0.04 },
+    { location: [35.6762, 139.6503] as [number, number], size: 0.05 },
+    { location: [51.5074, -0.1278] as [number, number], size: 0.05 },
+    { location: [40.7128, -74.006] as [number, number], size: 0.06 },
+  ],
+};
 
 export default function LoginPage() {
   const { user, loading, error, signInWithGoogle } = useAuth();
@@ -17,7 +43,19 @@ export default function LoginPage() {
   }, [loading, user, router]);
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-8 bg-surface px-6 text-center">
+    <div className="relative flex min-h-dvh flex-col overflow-hidden bg-surface">
+      {/* Cropped by the bottom edge so it reads as a horizon rather than a
+          floating ball, and so nothing ever sits on top of the sign-in button. */}
+      <div className="absolute inset-x-0 bottom-0 flex justify-center">
+        <div className="relative aspect-square w-[min(150vw,760px)] translate-y-[34%]">
+          <Globe config={GLOBE_CONFIG} />
+        </div>
+      </div>
+
+      {/* Softens the globe's top edge into the background. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-[42%] top-0 bg-gradient-to-b from-surface via-surface to-transparent" />
+
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-8 px-6 pb-[42vh] text-center">
       <div className="flex flex-col items-center gap-3">
         <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-to-br from-brand-start to-brand-end text-3xl font-bold text-white shadow-lg shadow-brand-start/30">
           A
@@ -40,6 +78,7 @@ export default function LoginPage() {
           {t(error)}
         </p>
       )}
+      </div>
     </div>
   );
 }
