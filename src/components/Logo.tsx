@@ -44,10 +44,41 @@ export function LogoMark({
 export function Logo({
   className = "",
   detailed = false,
+  useLockup = false,
 }: {
   className?: string;
   detailed?: boolean;
+  /**
+   * Pakai satu berkas logo utuh (tulisan + lambang) dari
+   * `public/brand/lockup.svg`, bukan menyusun tulisan dan lambang terpisah.
+   *
+   * Dipakai kalau berkas logo asli dimasukkan lewat
+   * `scripts/import-logo.mjs --as lockup`. Sama seperti lambang, berkasnya
+   * dipasang sebagai mask sehingga hanya bentuknya yang dipakai dan warnanya
+   * ikut teks — jadi satu berkas tetap benar di tema terang maupun gelap.
+   */
+  useLockup?: boolean;
 }) {
+  if (useLockup) {
+    return (
+      <span
+        role="img"
+        aria-label="Andropid"
+        className={`block bg-current ${className}`}
+        style={{
+          maskImage: "url(/brand/lockup.svg)",
+          WebkitMaskImage: "url(/brand/lockup.svg)",
+          maskRepeat: "no-repeat",
+          WebkitMaskRepeat: "no-repeat",
+          maskPosition: "center",
+          WebkitMaskPosition: "center",
+          maskSize: "contain",
+          WebkitMaskSize: "contain",
+        }}
+      />
+    );
+  }
+
   return (
     // w-fit: lebar kolom ditentukan oleh panjang katanya, lalu lambang di
     // bawahnya mengambil lebar itu (w-full) dengan rasio 2:1 — jadi lambang
