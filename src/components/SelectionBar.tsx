@@ -13,11 +13,14 @@ export default function SelectionBar({
   selection,
   allIds,
   onDelete,
+  extra,
 }: {
   selection: Selection;
   /** Every id currently visible, for "select all". */
   allIds: string[];
   onDelete: (ids: string[]) => Promise<void>;
+  /** Module-specific bulk action rendered on its own row above the buttons. */
+  extra?: React.ReactNode;
 }) {
   const t = useT();
   const [confirming, setConfirming] = useState(false);
@@ -40,7 +43,9 @@ export default function SelectionBar({
 
   return (
     <div className="fixed inset-x-0 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 px-4">
-      <div className="mx-auto flex max-w-md items-center gap-2 rounded-2xl bg-ink p-2.5 shadow-2xl">
+      <div className="mx-auto max-w-md rounded-2xl bg-ink p-2.5 shadow-2xl">
+        {extra && <div className="mb-2 px-1">{extra}</div>}
+        <div className="flex items-center gap-2">
         <button
           onClick={() => selection.stop()}
           className="rounded-full px-3 py-2 text-xs font-semibold text-surface/70 transition active:scale-95"
@@ -76,6 +81,7 @@ export default function SelectionBar({
             {t("app.delete")}
           </button>
         )}
+        </div>
       </div>
     </div>
   );

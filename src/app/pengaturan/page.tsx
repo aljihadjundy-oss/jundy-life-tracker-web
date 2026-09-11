@@ -11,6 +11,9 @@ import {
   type NotificationSettings,
 } from "@/lib/messaging";
 import Switch from "./components/Switch";
+import UnitsCard from "./components/UnitsCard";
+import { setUnits, subscribeWaktuSettings } from "@/lib/waktu";
+import { DEFAULT_WAKTU_SETTINGS, type WaktuSettings } from "@/types/waktu";
 import { setLanguage, useLanguage, useT } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/translations";
 import { setDailyGoal, subscribeStats } from "@/lib/gamification";
@@ -37,6 +40,7 @@ function PengaturanContent() {
     typeof window !== "undefined" && "Notification" in window ? Notification.permission : "default"
   );
   const [gameStats, setGameStats] = useState<GameStats>(EMPTY_STATS);
+  const [waktuSettings, setWaktuSettings] = useState<WaktuSettings>(DEFAULT_WAKTU_SETTINGS);
   const [enabling, setEnabling] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,9 +48,11 @@ function PengaturanContent() {
     if (!user) return;
     const unsubSettings = subscribeNotificationSettings(user.uid, setSettings);
     const unsubStats = subscribeStats(user.uid, setGameStats);
+    const unsubWaktu = subscribeWaktuSettings(user.uid, setWaktuSettings);
     return () => {
       unsubSettings();
       unsubStats();
+      unsubWaktu();
     };
   }, [user]);
 
@@ -118,6 +124,11 @@ function PengaturanContent() {
             ))}
           </div>
         </div>
+
+        <UnitsCard
+          units={waktuSettings.units}
+          onChange={(units) => user && setUnits(user.uid, units)}
+        />
 
         <div className="rounded-2xl bg-surface-card p-4 shadow-sm ring-1 ring-border/60">
           <h2 className="text-sm font-bold text-ink">{t("settings.pushTitle")}</h2>

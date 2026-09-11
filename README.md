@@ -88,7 +88,7 @@ src/
   app/                  # routes (App Router) — 1 folder per modul
     keuangan/            # transaksi, budget bulanan
       components/
-    waktu/                # task berjam, kalender hari & bulan, agenda
+    waktu/                # task ops: kalender, filter, grouping, strike, ringkasan
       components/
     branding/             # content calendar, konsistensi posting
       components/
@@ -114,7 +114,8 @@ firestore.rules           # data di-lock per uid (users/{uid}/...)
 users/{uid}/transactions/{id}     → { type, amount, category, note, date, createdAt }
 users/{uid}/settings/finance      → { monthlyBudget }
 users/{uid}/tasks/{id}            → { title, note, dueDate, startTime, durationMinutes,
-                                      reminderMinutes, status, createdAt, notifiedFor }
+                                      reminderMinutes, status, category, owner, unit, link,
+                                      source, createdAt, completedAt, notifiedFor }
 users/{uid}/content/{id}          → { title, platform, postDate, status, note, createdAt }
 users/{uid}/habits/{id}           → { name, createdAt }
 users/{uid}/habitLogs/{date_habitId} → { habitId, date }
@@ -125,6 +126,7 @@ users/{uid}/settings/notifications → { enabled, reminderTime, fcmTokens: [...]
 users/{uid}/settings/health       → { bodyMode, cycleStart, cycleLength, periodLength, dueDate,
                                       waterTarget, meals, bedtime, wakeTime, exercisePrefs }
 users/{uid}/settings/branding     → { youtubeChannel }
+users/{uid}/settings/waktu        → { units: [...], strikes: { "<owner>": 0-3 } }
 users/{uid}/gamification/stats    → { totalXp, dailyGoal, xpByDate, unlockedBadges, counters }
 ```
 

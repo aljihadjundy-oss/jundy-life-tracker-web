@@ -30,7 +30,10 @@ async function buildSummary(db, uid, today) {
     db.collection(`users/${uid}/habitLogs`).where("date", "==", today).get(),
   ]);
 
-  const tasksLeft = tasksSnap.docs.filter((d) => d.data().status !== "done").length;
+  const tasksLeft = tasksSnap.docs.filter((d) => {
+    const status = d.data().status;
+    return status !== "done" && status !== "ghosted";
+  }).length;
 
   const doneHabitIds = new Set(logsSnap.docs.map((d) => d.data().habitId));
   const habitsLeft = habitsSnap.docs.filter((d) => !doneHabitIds.has(d.id)).length;
@@ -85,7 +88,7 @@ async function dueTaskReminders(db, uid, today, nowWall) {
   const due = [];
   for (const docSnap of snap.docs) {
     const task = docSnap.data();
-    if (task.status === "done") continue;
+    if (task.status === "done" || task.status === "ghosted") continue;
     if (!/^\d{2}:\d{2}$/.test(task.startTime || "")) continue;
 
     const lead = typeof task.reminderMinutes === "number" ? task.reminderMinutes : 0;

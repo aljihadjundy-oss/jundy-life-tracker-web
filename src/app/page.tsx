@@ -11,7 +11,7 @@ import { subscribeTasks } from "@/lib/waktu";
 import { subscribeContent } from "@/lib/branding";
 import { subscribeHabitLogs, subscribeHabits } from "@/lib/kesehatan";
 import type { Transaction } from "@/types/finance";
-import type { Task } from "@/types/waktu";
+import { isOpen, type Task } from "@/types/waktu";
 import type { ContentItem } from "@/types/branding";
 import type { Habit, HabitLog } from "@/types/kesehatan";
 import { formatCurrency, currentMonthKey, todayISO, addDaysISO } from "@/lib/format";
@@ -83,7 +83,7 @@ function DashboardContent() {
     let todayTaskCount = 0;
     let overdueTaskCount = 0;
     for (const t of tasks) {
-      if (t.status === "done") continue;
+      if (!isOpen(t.status)) continue;
       if (t.dueDate === today) todayTaskCount++;
       else if (t.dueDate < today) overdueTaskCount++;
     }

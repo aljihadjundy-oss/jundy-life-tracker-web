@@ -6,15 +6,11 @@ import { addMinutesToHHmm, formatDate, formatTime, todayISO } from "@/lib/format
 import { useT } from "@/lib/i18n";
 import SelectCheckbox from "@/components/SelectCheckbox";
 import { useLongPress } from "@/lib/useLongPress";
-
-const STATUS_STYLE: Record<Task["status"], string> = {
-  todo: "bg-surface-raised text-ink-muted",
-  in_progress: "bg-accent-time/15 text-accent-time",
-  done: "bg-accent-finance/15 text-accent-finance",
-};
+import StatusPill, { CategoryPill, StrikeDots } from "./StatusPill";
 
 export default function TaskCard({
   task,
+  strikes,
   onCycleStatus,
   onOpen,
   selectMode,
@@ -23,6 +19,8 @@ export default function TaskCard({
   onLongPress,
 }: {
   task: Task;
+  /** Strike count for this task's owner, 0 when none. */
+  strikes: number;
   onCycleStatus: (id: string, next: Task["status"]) => void;
   onOpen: (task: Task) => void;
   selectMode: boolean;
@@ -32,31 +30,37 @@ export default function TaskCard({
 }) {
   const t = useT();
   const isDone = task.status === "done";
-  const isOverdue = !isDone && task.dueDate < todayISO();
+  const isOverdue = task.status !== "done" && task.status !== "ghosted" && task.dueDate < todayISO();
 
   // Press-and-hold is the second way into selection mode.
   const longPress = useLongPress(() => onLongPress(task.id), !selectMode);
 
-  const subtitle = isTimed(task)
+  const timeLabel = isTimed(task)
     ? `${formatTime(task.startTime)} – ${formatTime(addMinutesToHHmm(task.startTime, task.durationMinutes))}`
     : formatDate(task.dueDate);
+
+  const showStrikes = task.category === "delegation" && task.owner !== "" && strikes > 0;
 
   return (
     <div
       {...longPress}
-      className={`flex items-center gap-3 rounded-2xl bg-surface-card p-4 shadow-sm ring-1 transition ${
+      className={`flex items-start gap-3 rounded-2xl bg-surface-card p-4 shadow-sm ring-1 transition ${
         selected ? "ring-2 ring-accent-time" : "ring-border/60"
       }`}
     >
       {selectMode ? (
-        <button onClick={() => onToggleSelect(task.id)} aria-label={t("bulk.select")} className="shrink-0">
+        <button
+          onClick={() => onToggleSelect(task.id)}
+          aria-label={t("bulk.select")}
+          className="mt-0.5 shrink-0"
+        >
           <SelectCheckbox checked={selected} />
         </button>
       ) : (
         <button
           onClick={() => onCycleStatus(task.id, nextStatus(task.status))}
           aria-label={t("time.changeStatus")}
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition active:scale-90 ${
+          className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition active:scale-90 ${
             isDone ? "border-accent-finance bg-accent-finance text-white" : "border-border text-transparent"
           }`}
         >
@@ -70,29 +74,63 @@ export default function TaskCard({
         onClick={() => (selectMode ? onToggleSelect(task.id) : onOpen(task))}
         className="min-w-0 flex-1 text-left"
       >
-        <p className={`truncate text-sm font-semibold ${isDone ? "text-ink-muted line-through" : "text-ink"}`}>
-          {task.title}
-        </p>
-        <p className="truncate text-xs text-ink-muted">
-          {subtitle}
+        <div className="flex items-start justify-between gap-2">
+          <p
+            className={`min-w-0 flex-1 text-sm font-semibold ${
+              isDone ? "text-ink-muted line-through" : "text-ink"
+            }`}
+          >
+            {task.title}
+          </p>
+          {isOverdue ? (
+            <span className="shrink-0 rounded-full bg-red-500/15 px-2.5 py-1 text-[10px] font-bold text-red-500">
+              {t("time.late")}
+            </span>
+          ) : (
+            <span className="shrink-0">
+              <StatusPill status={task.status} />
+            </span>
+          )}
+        </div>
+
+        <p className="mt-0.5 truncate text-xs text-ink-muted">
+          {timeLabel}
           {task.note ? ` · ${task.note}` : ""}
         </p>
+
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <CategoryPill category={task.category} />
+          {task.unit && (
+            <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-ink-muted">
+              {task.unit}
+            </span>
+          )}
+          {task.owner && (
+            <span className="rounded-full bg-surface-raised px-2 py-0.5 text-[10px] font-semibold text-ink">
+              {task.owner}
+            </span>
+          )}
+          {showStrikes && <StrikeDots count={strikes} />}
+          {isTimed(task) && task.reminderMinutes > 0 && !isDone && (
+            <span className="text-[10px] font-medium text-ink-muted">
+              🔔 {t("time.reminderBefore", { count: task.reminderMinutes })}
+            </span>
+          )}
+        </div>
       </button>
 
-      <div className="flex flex-col items-end gap-1">
-        <span
-          className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
-            isOverdue ? "bg-red-500/15 text-red-500" : STATUS_STYLE[task.status]
-          }`}
+      {task.link && !selectMode && (
+        <a
+          href={task.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          aria-label={t("ops.openLink")}
+          className="mt-0.5 shrink-0 rounded-full bg-surface-raised px-2.5 py-1.5 text-[11px] font-bold text-accent-time"
         >
-          {isOverdue ? t("time.late") : t(`status.${task.status}`)}
-        </span>
-        {isTimed(task) && task.reminderMinutes > 0 && !isDone && (
-          <span className="text-[10px] font-medium text-ink-muted">
-            🔔 {t("time.reminderBefore", { count: task.reminderMinutes })}
-          </span>
-        )}
-      </div>
+          ↗
+        </a>
+      )}
     </div>
   );
 }

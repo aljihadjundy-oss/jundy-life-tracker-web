@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { NewTask, Task, TaskStatus } from "@/types/waktu";
+import type { NewTask, Task, TaskCategory, TaskStatus } from "@/types/waktu";
 import {
+  CATEGORY_ORDER,
   DEFAULT_DURATION_MINUTES,
   DEFAULT_REMINDER_MINUTES,
   DURATION_OPTIONS,
@@ -16,6 +17,8 @@ export default function TaskForm({
   defaultDate,
   defaultTime = "",
   initial,
+  units,
+  owners,
   onSubmit,
   onDelete,
   onClose,
@@ -23,6 +26,9 @@ export default function TaskForm({
   defaultDate: string;
   defaultTime?: string;
   initial?: Task | null;
+  units: string[];
+  /** Owner names already used, offered as a datalist so spelling stays stable. */
+  owners: string[];
   onSubmit: (data: NewTask) => Promise<void>;
   onDelete?: (id: string) => Promise<void>;
   onClose: () => void;
@@ -38,6 +44,10 @@ export default function TaskForm({
     initial?.reminderMinutes ?? DEFAULT_REMINDER_MINUTES
   );
   const [status, setStatus] = useState<TaskStatus>(initial?.status ?? "todo");
+  const [category, setCategory] = useState<TaskCategory>(initial?.category ?? "personal");
+  const [owner, setOwner] = useState(initial?.owner ?? "");
+  const [unit, setUnit] = useState(initial?.unit ?? "");
+  const [link, setLink] = useState(initial?.link ?? "");
   const [note, setNote] = useState(initial?.note ?? "");
   const [submitting, setSubmitting] = useState(false);
 
@@ -56,6 +66,11 @@ export default function TaskForm({
         durationMinutes: timed ? durationMinutes : DEFAULT_DURATION_MINUTES,
         reminderMinutes: timed ? reminderMinutes : 0,
         status,
+        category,
+        owner: owner.trim(),
+        unit,
+        link: link.trim(),
+        source: initial?.source ?? "manual",
         note: note.trim(),
       });
       onClose();
@@ -184,14 +199,67 @@ export default function TaskForm({
         </div>
 
         <div className="mb-4">
-          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("time.status")}</span>
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("ops.category")}</span>
           <div className="flex gap-2">
+            {CATEGORY_ORDER.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCategory(c)}
+                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition ${
+                  category === c ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+                }`}
+              >
+                {t(`category.task.${c}`)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-4 grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("ops.owner")}</span>
+            <input
+              type="text"
+              list="task-owners"
+              value={owner}
+              onChange={(e) => setOwner(e.target.value)}
+              placeholder={t("ops.ownerPlaceholder")}
+              className="w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-sm text-ink outline-none focus:border-ink"
+            />
+            <datalist id="task-owners">
+              {owners.map((name) => (
+                <option key={name} value={name} />
+              ))}
+            </datalist>
+          </label>
+
+          <label className="block">
+            <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("ops.unit")}</span>
+            <select
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              className="w-full rounded-xl border border-border bg-surface-card px-3 py-3 text-sm text-ink outline-none focus:border-ink"
+            >
+              <option value="">{t("ops.noUnit")}</option>
+              {units.map((name) => (
+                <option key={name} value={name}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mb-4">
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("time.status")}</span>
+          <div className="flex flex-wrap gap-2">
             {STATUS_ORDER.map((s) => (
               <button
                 key={s}
                 type="button"
                 onClick={() => setStatus(s)}
-                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition ${
+                className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
                   status === s ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
                 }`}
               >
@@ -200,6 +268,20 @@ export default function TaskForm({
             ))}
           </div>
         </div>
+
+        <label className="mb-4 block">
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">
+            {t("ops.link")} <span className="font-normal">{t("app.optional")}</span>
+          </span>
+          <input
+            type="url"
+            inputMode="url"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            placeholder="https://..."
+            className="w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-sm text-ink outline-none focus:border-ink"
+          />
+        </label>
 
         <label className="mb-5 block">
           <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("finance.note")}</span>
