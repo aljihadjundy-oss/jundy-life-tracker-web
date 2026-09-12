@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppShell from "@/components/AppShell";
 import TopBar from "@/components/TopBar";
 import { useAuth } from "@/lib/auth-context";
@@ -95,19 +95,33 @@ function JurnalContent() {
     setShowEditor(true);
   }
 
-  function handleCreate(data: NewJournalEntry) {
-    if (!user) throw new Error("not signed in");
-    // id dibuat di klien, jadi auto-save bisa langsung lanjut — lihat addEntry.
-    const { id, done } = addEntry(user.uid, data);
-    reportFailure(done, t("notify.saveFailed"));
-    awardXpInBackground(user.uid, "journal");
-    return id;
-  }
+  /**
+   * Dibungkus useCallback dengan sengaja.
+   *
+   * Editor memakai keduanya sebagai dependensi simpan-otomatisnya. Sebagai
+   * fungsi biasa, identitasnya berganti tiap render halaman — dan halaman ini
+   * ikut dirender ulang tiap kali listener Firestore berbunyi, yaitu tiap kali
+   * simpan-otomatis menulis. Itu menjadikan penyimpanan memicu penyimpanan.
+   */
+  const handleCreate = useCallback(
+    (data: NewJournalEntry) => {
+      if (!user) throw new Error("not signed in");
+      // id dibuat di klien, jadi auto-save bisa langsung lanjut — lihat addEntry.
+      const { id, done } = addEntry(user.uid, data);
+      reportFailure(done, t("notify.saveFailed"));
+      awardXpInBackground(user.uid, "journal");
+      return id;
+    },
+    [user, t]
+  );
 
-  function handleUpdate(id: string, data: Partial<NewJournalEntry>) {
-    if (!user) return;
-    reportFailure(updateEntry(user.uid, id, data), t("notify.saveFailed"));
-  }
+  const handleUpdate = useCallback(
+    (id: string, data: Partial<NewJournalEntry>) => {
+      if (!user) return;
+      reportFailure(updateEntry(user.uid, id, data), t("notify.saveFailed"));
+    },
+    [user, t]
+  );
 
   function handleDelete(id: string) {
     if (!user) return;

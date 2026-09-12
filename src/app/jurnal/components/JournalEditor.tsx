@@ -50,6 +50,15 @@ export default function JournalEditor({
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlight = useRef<Promise<void> | null>(null);
 
+  /**
+   * Ada perubahan yang belum tersimpan.
+   *
+   * Ref, bukan state: penjaga ini dibaca oleh cleanup effect yang TIDAK boleh
+   * ikut berubah tiap render, dan membacanya dari state akan mengunci nilai
+   * lama di dalam closure.
+   */
+  const dirty = useRef(false);
+
   // Read by the flush path so it always writes the newest values, even when
   // called from an event listener that closed over an older render.
   const latest = useRef({
@@ -73,9 +82,17 @@ export default function JournalEditor({
    * afterwards is what lets autosave run without the user ever pressing Save.
    */
   const flush = useCallback(async () => {
+    // Tanpa penjaga ini, setiap pemanggilan flush menulis ulang isi yang sama.
+    // Itu bukan sekadar boros: tulisan memicu listener Firestore, listener
+    // memicu render halaman, render mengganti identitas onCreate/onUpdate, dan
+    // cleanup effect di bawah memanggil flush lagi — putaran tanpa ujung yang
+    // menguasai thread utama sampai mengetik pun tidak bisa.
+    if (!dirty.current) return;
+
     const { title: ti, content: co, mood: mo, hasAudio: ha, audioSeconds: se } = latest.current;
     if (!ti.trim() && !co.trim() && !ha) return;
     const meta = latest.current;
+    dirty.current = false;
 
     // Serialise: two overlapping flushes would create two entries.
     if (inFlight.current) await inFlight.current;
@@ -108,10 +125,25 @@ export default function JournalEditor({
   }, [date, onCreate, onUpdate, t]);
 
   function touch() {
+    dirty.current = true;
     setState("dirty");
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => void flush(), AUTOSAVE_DELAY_MS);
   }
+
+  /**
+   * flush terbaru, dibaca lewat ref.
+   *
+   * flush adalah useCallback yang bergantung pada onCreate/onUpdate. Halaman
+   * pemanggil membuat ulang kedua fungsi itu tiap render, jadi identitas flush
+   * ikut berubah tiap render. Dua effect di bawah hanya boleh berjalan sekali
+   * seumur hidup komponen — kalau mereka bergantung pada flush, cleanup-nya
+   * ikut berjalan tiap render dan menyimpan ulang tanpa henti.
+   */
+  const flushRef = useRef(flush);
+  useEffect(() => {
+    flushRef.current = flush;
+  });
 
   // Backgrounding the app is the moment writing is most likely to be lost —
   // on a phone, closing the PWA fires this and nothing else.
@@ -119,7 +151,7 @@ export default function JournalEditor({
     function onHide() {
       if (document.visibilityState === "hidden") {
         if (timer.current) clearTimeout(timer.current);
-        void flush();
+        void flushRef.current();
       }
     }
     document.addEventListener("visibilitychange", onHide);
@@ -128,15 +160,15 @@ export default function JournalEditor({
       document.removeEventListener("visibilitychange", onHide);
       window.removeEventListener("pagehide", onHide);
     };
-  }, [flush]);
+  }, []);
 
   // Leaving the editor by any route — back button, tapping Done — saves too.
   useEffect(() => {
     return () => {
       if (timer.current) clearTimeout(timer.current);
-      void flush();
+      void flushRef.current();
     };
-  }, [flush]);
+  }, []);
 
   async function handleClip(blob: Blob, seconds: number) {
     // The clip is filed under the entry id, so the entry has to exist first.
@@ -168,6 +200,7 @@ export default function JournalEditor({
     if (!stored) return;
     setHasAudio(true);
     setAudioSeconds(seconds);
+    latest.current = { ...latest.current, hasAudio: true, audioSeconds: seconds };
     await onUpdate(id, { hasAudio: true, audioSeconds: seconds });
     setState("saved");
   }
@@ -218,6 +251,25 @@ export default function JournalEditor({
         >
           {statusLabel}
         </span>
+
+        {/* Simpan manual, di samping simpan otomatis.
+            Otomatis saja ternyata tidak cukup: tanpa tombol, tidak ada cara
+            memaksa penyimpanan sekarang juga, dan tidak ada yang bisa ditekan
+            saat ragu apakah tulisannya sudah aman. */}
+        <button
+          onClick={() => {
+            if (timer.current) clearTimeout(timer.current);
+            void flush();
+          }}
+          // Hanya hidup saat benar-benar ada yang belum tersimpan. "saved"
+          // ikut dimatikan: menekannya tidak akan menulis apa pun, dan tombol
+          // yang bisa ditekan tapi tidak melakukan apa-apa lebih membingungkan
+          // daripada tombol yang jelas mati.
+          disabled={state !== "dirty"}
+          className="shrink-0 rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95 disabled:opacity-40"
+        >
+          {t("app.save")}
+        </button>
       </div>
 
       <div className="flex flex-1 flex-col overflow-y-auto px-5 py-4">
