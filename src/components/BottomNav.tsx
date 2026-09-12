@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n";
 import { useUserConfig } from "@/lib/user-context";
 import { NAV_ITEMS } from "./nav-items";
+import LimelightNav from "./ui/limelight-nav";
 
 /**
  * Navigasi ponsel. Di tablet dan desktop digantikan SideNav — jempol tidak
@@ -17,9 +18,19 @@ export default function BottomNav() {
   const { pillars } = useUserConfig();
   const items = NAV_ITEMS.filter((item) => item.pillar === null || pillars[item.pillar]);
 
+  // Indeks diturunkan dari rute, bukan dari klik terakhir. Menekan Kembali atau
+  // berpindah lewat tautan lain tetap menggeser sorotnya ke tempat yang benar.
+  // -1 saat berada di halaman yang tidak punya tombolnya sendiri (Pengaturan),
+  // dan di situ sorotnya memang tidak seharusnya menunjuk apa pun.
+  const activeIndex = items.findIndex((item) => item.href === pathname);
+
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/90 backdrop-blur-lg md:hidden">
-      <div className="mx-auto flex max-w-md items-center justify-between px-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
+      <LimelightNav
+        activeIndex={activeIndex}
+        count={items.length}
+        className="mx-auto max-w-md px-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2"
+      >
         {items.map((item) => {
           const active = pathname === item.href;
           const Icon = item.icon;
@@ -42,7 +53,7 @@ export default function BottomNav() {
             </Link>
           );
         })}
-      </div>
+      </LimelightNav>
     </nav>
   );
 }
