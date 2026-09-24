@@ -2,10 +2,13 @@
 
 import { useEffect } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { useT } from "@/lib/i18n";
-import { Logo } from "@/components/Logo";
+import { useT, useLanguage, setLanguage } from "@/lib/i18n";
+import { LANGUAGES } from "@/lib/translations";
+import { Logo, LogoMark } from "@/components/Logo";
+import ThemeToggle from "@/components/ThemeToggle";
 
 /**
  * Loaded on its own, after the page is interactive. Under `output: "export"`
@@ -39,6 +42,7 @@ export default function LoginPage() {
   const { user, loading, error, signInWithGoogle } = useAuth();
   const router = useRouter();
   const t = useT();
+  const lang = useLanguage();
 
   useEffect(() => {
     if (!loading && user) {
@@ -48,6 +52,31 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-dvh flex-col overflow-hidden bg-surface">
+      {/* Cuma jalan pulang + dua toggle — bukan pill lengkap kayak landing,
+          karena halaman ini sengaja satu tujuan (tombol masuk), tidak punya
+          section lain untuk dituju. */}
+      <header className="relative z-20 flex items-center justify-between px-5 py-4">
+        <Link href="/" className="flex items-center gap-2 text-ink">
+          <LogoMark className="h-4 w-8" />
+        </Link>
+        <div className="flex items-center gap-2">
+          <div className="flex overflow-hidden rounded-full border border-border text-[11px] font-semibold">
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.value}
+                onClick={() => setLanguage(l.value)}
+                className={`px-2.5 py-1.5 transition ${
+                  lang === l.value ? "bg-ink text-surface" : "text-ink-muted"
+                }`}
+              >
+                {l.value.toUpperCase()}
+              </button>
+            ))}
+          </div>
+          <ThemeToggle />
+        </div>
+      </header>
+
       {/* Dipotong tepi bawah layar supaya terbaca sebagai cakrawala, bukan bola
           melayang. Ukurannya sengaja melebihi lebar layar dan puncaknya naik
           sampai ke belakang tombol masuk — versi sebelumnya duduk terlalu
