@@ -29,5 +29,27 @@ service cloud.firestore {
     match /users/{uid}/{document=**} {
       allow read, write: if isAllowed() && request.auth.uid == uid;
     }
+
+    /**
+     * Form waitlist di landing page — pengunjung yang belum login sama sekali
+     * (belum ada akun Google, apalagi email di isAllowed()) harus bisa nulis
+     * ke sini. Create-only dan tervalidasi ketat di server, supaya collection
+     * ini tidak bisa dipakai jadi celah baca/tulis data lain: tidak ada read,
+     * update, atau delete dari client sama sekali — cuma developer yang bisa
+     * melihat daftarnya, lewat Firebase Console atau Admin SDK.
+     */
+    match /waitlist/{id} {
+      allow create: if request.resource.data.keys().hasOnly(["email", "name", "useCase", "createdAt"])
+        && request.resource.data.email is string
+        && request.resource.data.email.size() > 3
+        && request.resource.data.email.size() <= 200
+        && request.resource.data.email.matches("^[^@\\s]+@[^@\\s]+[.][^@\\s]+$")
+        && (!("name" in request.resource.data) ||
+          (request.resource.data.name is string && request.resource.data.name.size() <= 100))
+        && (!("useCase" in request.resource.data) ||
+          (request.resource.data.useCase is string && request.resource.data.useCase.size() <= 500))
+        && request.resource.data.createdAt == request.time;
+      allow read, update, delete: if false;
+    }
   }
 }

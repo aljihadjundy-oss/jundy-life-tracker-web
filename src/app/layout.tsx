@@ -17,8 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Andropid",
-  description: "Keuangan, waktu, branding, kesehatan, dan jurnal — dalam satu tempat.",
+  title: "Andropid — Uang dan waktu kepegang, konten tetap jalan",
+  description:
+    "Andropid buat creator dan mahasiswa Indonesia: catat transaksi & saldo otomatis, kalender tugas dengan reminder, dan kalender konten — di satu app. Beta lewat undangan.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -28,6 +29,18 @@ export const metadata: Metadata = {
   icons: {
     icon: "/icons/icon-192.png",
     apple: "/icons/icon-192.png",
+  },
+  openGraph: {
+    title: "Andropid",
+    description:
+      "Uang dan waktu kepegang, konten tetap jalan. Personal tracker buat creator & mahasiswa Indonesia — beta lewat undangan.",
+    type: "website",
+    locale: "id_ID",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Andropid",
+    description: "Uang dan waktu kepegang, konten tetap jalan. Beta lewat undangan.",
   },
 };
 

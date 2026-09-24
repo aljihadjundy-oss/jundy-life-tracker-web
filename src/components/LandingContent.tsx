@@ -7,6 +7,7 @@ import { NAV_ITEMS, type IconProps } from "@/components/nav-items";
 import { useT, useLanguage, setLanguage } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/translations";
 import { applySkin, readSkin, SKINS, subscribeSkin, type Skin } from "@/lib/skin";
+import WaitlistForm from "@/components/WaitlistForm";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
 /**
@@ -48,7 +49,22 @@ const ACCENT_BG_CLASS: Record<string, string> = {
 };
 
 const TRUST_KEYS = ["isolation", "offline", "backup", "invite"] as const;
-const FAQ_KEYS = ["q1", "q2", "q3", "q4", "q5"] as const;
+const FAQ_KEYS = ["q1", "q2", "q3", "q4", "q5", "q6", "q7"] as const;
+
+/**
+ * Belum ada screenshot asli. `src` menunjuk ke file yang belum ada di
+ * `public/screenshots/` — begitu file itu ditambahkan (nama & path sama
+ * persis), <img>-nya langsung tampil sendiri lewat onError fallback di
+ * ScreenshotSlot, tanpa perlu ubah kode lagi.
+ */
+const SCREEN_SLOTS = [
+  { key: "today", file: "public/screenshots/today.png" },
+  { key: "keuangan", file: "public/screenshots/keuangan.png" },
+  { key: "kalender", file: "public/screenshots/kalender.png" },
+  { key: "jurnal", file: "public/screenshots/jurnal.png" },
+  { key: "settings", file: "public/screenshots/settings.png" },
+] as const;
+const SCREEN_SIZE = "390×844";
 
 const NAV_LINKS = [
   { href: "#pilar", labelKey: "landing.nav.pillars" },
@@ -226,6 +242,29 @@ export default function LandingContent() {
         </div>
       </section>
 
+      {/* --- Screenshot/demo (placeholder sampai asetnya ada) --------------- */}
+      <section className="mx-auto max-w-5xl px-5 py-14">
+        <div className="text-center">
+          <h2 className="text-2xl font-extrabold tracking-tight text-ink md:text-3xl">
+            {t("landing.screens.title")}
+          </h2>
+          <p className="mx-auto mt-2 max-w-lg text-sm text-ink-muted md:text-base">
+            {t("landing.screens.subtitle")}
+          </p>
+        </div>
+
+        <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          {SCREEN_SLOTS.map((slot) => (
+            <ScreenshotSlot
+              key={slot.key}
+              src={`/${slot.file.replace("public/", "")}`}
+              label={t(`landing.screens.${slot.key}`)}
+              todo={t("landing.screens.todo", { file: slot.file, size: SCREEN_SIZE })}
+            />
+          ))}
+        </div>
+      </section>
+
       {/* --- Lima pilar ---------------------------------------------------- */}
       <section id="pilar" className="mx-auto max-w-5xl px-5 py-14">
         <div className="text-center">
@@ -354,7 +393,7 @@ export default function LandingContent() {
       </section>
 
       {/* --- Akses: pita CTA kontras, dari token ink/surface sendiri -------- */}
-      <section className="bg-ink px-5 py-16 text-center text-surface">
+      <section id="waitlist" className="bg-ink px-5 py-16 text-center text-surface">
         <h2 className="text-xl font-extrabold tracking-tight md:text-2xl">
           {t("landing.access.title")}
         </h2>
@@ -367,13 +406,61 @@ export default function LandingContent() {
         >
           {t("landing.hero.cta")}
         </Link>
+
+        <div className="mx-auto mt-10 max-w-sm rounded-3xl bg-surface p-6 text-ink">
+          <h3 className="text-base font-bold text-ink">{t("landing.waitlist.title")}</h3>
+          <p className="mt-1 text-xs leading-relaxed text-ink-muted">{t("landing.waitlist.subtitle")}</p>
+          <div className="relative mt-4">
+            <WaitlistForm />
+          </div>
+        </div>
       </section>
 
       {/* --- Footer ------------------------------------------------------ */}
       <footer className="border-t border-border px-5 py-8 text-center">
         <Logo className="mx-auto text-ink" />
         <p className="mt-3 text-xs text-ink-muted">{t("landing.footer.byline")}</p>
+        <div className="mt-3 flex justify-center gap-4 text-xs font-semibold text-ink-muted">
+          <Link href="/privacy" className="hover:text-ink">
+            {t("landing.footer.privacy")}
+          </Link>
+          <Link href="/terms" className="hover:text-ink">
+            {t("landing.footer.terms")}
+          </Link>
+        </div>
       </footer>
+    </div>
+  );
+}
+
+/**
+ * Menampilkan screenshot asli begitu ada di `src` — sampai itu terjadi,
+ * `onError` menangkap 404-nya dan menampilkan placeholder dengan instruksi
+ * persis file mana yang harus ditambahkan Jundy. Jadi menambahkan aset asli
+ * cuma butuh menaruh file di path yang sama, tidak perlu sentuh kode ini.
+ */
+function ScreenshotSlot({ src, label, todo }: { src: string; label: string; todo: string }) {
+  const [failed, setFailed] = useState(false);
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="aspect-[9/19] w-full overflow-hidden rounded-2xl border border-border bg-surface-raised">
+        {!failed ? (
+          // eslint-disable-next-line @next/next/no-img-element -- konten pemasaran statis, bukan aset yang perlu optimasi Next/Image.
+          <img
+            src={src}
+            alt={label}
+            onError={() => setFailed(true)}
+            className="h-full w-full object-cover object-top"
+          />
+        ) : (
+          <div className="flex h-full flex-col items-center justify-center gap-2 p-3 text-center">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-ink-muted">{label}</span>
+            <span className="text-[9px] leading-relaxed text-ink-muted/70">{todo}</span>
+          </div>
+        )}
+      </div>
+      <span className="text-xs font-semibold text-ink-muted">{label}</span>
     </div>
   );
 }
