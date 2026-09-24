@@ -68,7 +68,7 @@ function Gate({ children }: { children: ReactNode }) {
   );
 }
 
-function Spinner() {
+export function Spinner() {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-surface">
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-ink" />

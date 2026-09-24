@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import AppShell from "@/components/AppShell";
+import AppShell, { Spinner } from "@/components/AppShell";
+import LandingContent from "@/components/LandingContent";
 import TopBar from "@/components/TopBar";
 import SettingsLink from "@/components/SettingsLink";
 import { useAuth } from "@/lib/auth-context";
@@ -41,6 +42,20 @@ const MODULES: {
 ];
 
 export default function HomePage() {
+  const { user, loading } = useAuth();
+
+  // Sebentar sampai status login diketahui. Menahan di sini — bukan
+  // melompat langsung ke salah satu cabang — supaya pengguna yang sudah
+  // login (termasuk PWA yang sudah terpasang di HP) tidak pernah sempat
+  // melihat kedipan halaman pemasaran sebelum dashboard-nya muncul.
+  if (loading) return <Spinner />;
+
+  // Root domain adalah pintu publik: pengunjung yang belum masuk melihat
+  // halaman pemasaran di sini, bukan diarahkan paksa ke /login seperti
+  // halaman berpilar lainnya. Yang sudah masuk mendarat di dashboard,
+  // persis seperti sebelum root ini punya cabang publik.
+  if (!user) return <LandingContent />;
+
   return (
     <AppShell>
       <DashboardContent />

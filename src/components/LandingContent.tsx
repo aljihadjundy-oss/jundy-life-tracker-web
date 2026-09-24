@@ -10,10 +10,12 @@ import { applySkin, readSkin, SKINS, subscribeSkin, type Skin } from "@/lib/skin
 import { useSyncExternalStore } from "react";
 
 /**
- * Halaman pemasaran publik — bukan dashboard, tidak dibungkus AppShell, jadi
- * bisa dilihat siapa saja tanpa login. Bertolak belakang dengan setiap
- * halaman lain di app ini: di sini yang penting menjelaskan dan meyakinkan,
- * bukan menyimpan data.
+ * Halaman pemasaran publik — dirender di root ("/") persis saat pengunjung
+ * BELUM login (lihat src/app/page.tsx). Yang sudah login tidak pernah melihat
+ * ini; mereka mendarat di dashboard seperti biasa. Jadi ini bukan halaman
+ * berdiri sendiri, melainkan cabang dari halaman Home, sengaja tidak
+ * dibungkus AppShell karena tugasnya menjelaskan dan meyakinkan pengunjung
+ * yang belum punya akun, bukan menyimpan data.
  *
  * Satu batasan jujur yang membentuk seluruh isi halaman ini: TIDAK ADA bukti
  * sosial yang bisa dipakai. Tidak ada jumlah pengguna, testimoni, atau rating
@@ -37,7 +39,7 @@ const ACCENT_CLASS: Record<string, string> = {
   "/jurnal": "text-brand-mid",
 };
 
-export default function LandingPage() {
+export default function LandingContent() {
   const t = useT();
   const lang = useLanguage();
   const skin = useSyncExternalStore(subscribeSkin, readSkin, () => "instagram" as Skin);
@@ -47,7 +49,7 @@ export default function LandingPage() {
       {/* --- Nav ------------------------------------------------------- */}
       <header className="sticky top-0 z-30 border-b border-border bg-surface/90 backdrop-blur-lg">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
-          <Link href="/landing" className="flex items-center gap-2 text-ink">
+          <Link href="/" className="flex items-center gap-2 text-ink">
             <LogoMark className="h-4 w-8" />
             <span className="text-sm font-bold tracking-tight">
               Andropid<span className="text-brand-mid">.</span>
