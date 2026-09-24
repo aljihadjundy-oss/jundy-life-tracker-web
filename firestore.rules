@@ -2,10 +2,32 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Single-user app: every document lives under users/{uid}/...
-    // and only the signed-in owner of that uid may read/write it.
+    /**
+     * Email yang boleh masuk.
+     *
+     * HARUS disinkronkan manual dengan NEXT_PUBLIC_ALLOWED_EMAILS di
+     * .env.local (lihat src/lib/firebase.ts) — rules Firestore tidak bisa
+     * membaca env var, jadi daftar ini ditulis literal di sini.
+     *
+     * Tanpa pemeriksaan ini, gerbang di auth-context.tsx hanya berlaku di UI:
+     * siapa pun yang punya akun Google bisa memanggil Firestore SDK langsung
+     * (lewat konsol browser atau app lain) dan membaca/menulis di bawah uid
+     * mereka sendiri, karena rule sebelumnya hanya memeriksa apakah uid di
+     * path cocok dengan uid yang login — bukan siapa pemilik uid itu.
+     */
+    function isAllowed() {
+      return request.auth != null &&
+        request.auth.token.email != null &&
+        request.auth.token.email.lower() in [
+          "aljihadjundy@gmail.com",
+          "mayakris402@gmail.com"
+        ];
+    }
+
+    // Setiap dokumen hidup di users/{uid}/... dan hanya pemilik uid itu — yang
+    // emailnya ada di isAllowed() — yang boleh membaca/menulisnya.
     match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if isAllowed() && request.auth.uid == uid;
     }
   }
 }

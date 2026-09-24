@@ -10,7 +10,7 @@ Personal life tracker — mobile-first PWA. 5 modul, semua jalan end-to-end (aut
 ## Tech Stack
 
 - Next.js (App Router, static export) + Tailwind CSS v4
-- Firebase Auth (Google Sign-In, single-user lock) + Firestore
+- Firebase Auth (Google Sign-In, terkunci ke daftar email tertentu) + Firestore
 - Firebase Cloud Messaging (push notification) + Cloud Functions (reminder terjadwal)
 - Dwibahasa (ID/EN) lewat kamus terjemahan sendiri, tanpa dependensi i18n
 - PWA: manifest.json + custom service worker (`public/sw.js`)
@@ -21,7 +21,9 @@ Personal life tracker — mobile-first PWA. 5 modul, semua jalan end-to-end (aut
 1. Bikin project di [Firebase Console](https://console.firebase.google.com), tambahin Web App.
 2. Aktifin **Authentication → Sign-in method → Google**.
 3. Aktifin **Firestore Database** (mode production, region terdekat).
-4. Copy `.env.local.example` jadi `.env.local`, isi semua `NEXT_PUBLIC_FIREBASE_*` dari config Web App lo. `NEXT_PUBLIC_OWNER_EMAIL` udah default ke email lo — cuma akun ini yang bisa login.
+4. Copy `.env.local.example` jadi `.env.local`, isi semua `NEXT_PUBLIC_FIREBASE_*` dari config Web App lo. `NEXT_PUBLIC_ALLOWED_EMAILS` diisi daftar email yang boleh login, dipisah koma.
+
+   > **Nambah atau cabut akses seseorang: dua tempat, bukan satu.** `NEXT_PUBLIC_ALLOWED_EMAILS` di `.env.local` cuma gerbang di UI. Yang benar-benar mengunci data ada di `firestore.rules` (fungsi `isAllowed()`), yang punya daftar email sendiri secara literal — rules Firestore gak bisa membaca env var. Edit dua-duanya, lalu deploy ulang rules-nya: `firebase deploy --only firestore:rules`. Kalau cuma env var yang diubah, siapa pun yang emailnya masih ada di `firestore.rules` tetap bisa masuk lewat Firestore SDK langsung meski gak lolos gerbang UI-nya.
 
    > **Penting soal `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`:** isi dengan domain Hosting (`<project-id>.web.app`), **bukan** `<project-id>.firebaseapp.com` yang dikasih Firebase Console. Login Google butuh `authDomain` satu origin dengan app-nya. Kalau beda origin, browser yang memblokir cookie/storage pihak ketiga (Chrome, apalagi mode incognito) bikin konteks login gagal baca konfigurasinya sendiri, dan errornya menyesatkan: `auth/api-key-not-valid` padahal API key-nya benar.
 5. `npm install`

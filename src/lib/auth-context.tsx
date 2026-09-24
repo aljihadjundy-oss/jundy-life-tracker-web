@@ -15,7 +15,7 @@ import {
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
-import { auth, OWNER_EMAIL } from "./firebase";
+import { ALLOWED_EMAILS, auth } from "./firebase";
 
 type AuthState = {
   user: User | null;
@@ -34,7 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-      if (firebaseUser && firebaseUser.email !== OWNER_EMAIL) {
+      const email = firebaseUser?.email?.toLowerCase() ?? null;
+      if (firebaseUser && (!email || !ALLOWED_EMAILS.includes(email))) {
         firebaseSignOut(auth);
         setUser(null);
         setError("auth.noAccess");

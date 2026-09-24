@@ -36,4 +36,18 @@ export const db = initializeFirestore(firebaseApp, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
 });
 
-export const OWNER_EMAIL = process.env.NEXT_PUBLIC_OWNER_EMAIL ?? "aljihadjundy@gmail.com";
+/**
+ * Daftar email yang boleh masuk ke app ini.
+ *
+ * `NEXT_PUBLIC_ALLOWED_EMAILS` dipisah koma di Firebase Console maupun di sini.
+ * Ini hanya gerbang di sisi klien — pemeriksaan yang sebenarnya mengunci data
+ * ada di `firestore.rules` (lihat `isAllowed()` di sana), yang harus diperbarui
+ * secara terpisah karena rules Firestore tidak bisa membaca env var. Dua-duanya
+ * WAJIB disinkronkan manual setiap menambah atau mencabut akses seseorang.
+ */
+export const ALLOWED_EMAILS: string[] = (
+  process.env.NEXT_PUBLIC_ALLOWED_EMAILS ?? "aljihadjundy@gmail.com"
+)
+  .split(",")
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
