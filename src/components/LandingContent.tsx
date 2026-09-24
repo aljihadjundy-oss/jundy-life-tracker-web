@@ -7,7 +7,7 @@ import { NAV_ITEMS, type IconProps } from "@/components/nav-items";
 import { useT, useLanguage, setLanguage } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/translations";
 import { applySkin, readSkin, SKINS, subscribeSkin, type Skin } from "@/lib/skin";
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 /**
  * Halaman pemasaran publik — dirender di root ("/") persis saat pengunjung
@@ -50,45 +50,134 @@ const ACCENT_BG_CLASS: Record<string, string> = {
 const TRUST_KEYS = ["isolation", "offline", "backup", "invite"] as const;
 const FAQ_KEYS = ["q1", "q2", "q3", "q4", "q5"] as const;
 
+const NAV_LINKS = [
+  { href: "#pilar", labelKey: "landing.nav.pillars" },
+  { href: "#fondasi", labelKey: "landing.nav.foundation" },
+  { href: "#faq", labelKey: "landing.nav.faq" },
+] as const;
+
 export default function LandingContent() {
   const t = useT();
   const lang = useLanguage();
   const skin = useSyncExternalStore(subscribeSkin, readSkin, () => "instagram" as Skin);
   const [openFaq, setOpenFaq] = useState<string | null>(FAQ_KEYS[0]);
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  // Sengaja bukan floating navbar penuh ala Anitya (fixed + spacer) — pill ini
+  // tetap `sticky` di dalam flow dokumen, jadi tidak perlu spacer manual untuk
+  // mengimbangi tinggi navbar. Efek "melayang" datang dari padding di sekitar
+  // pill dan bayangan yang muncul begitu halaman digulir.
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 8);
+    }
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <div className="min-h-dvh bg-surface">
       {/* --- Nav ------------------------------------------------------- */}
-      <header className="sticky top-0 z-30 border-b border-border bg-surface/90 backdrop-blur-lg">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-5 py-3">
-          <Link href="/" className="flex items-center gap-2 text-ink">
-            <LogoMark className="h-4 w-8" />
-            <span className="text-sm font-bold tracking-tight">
-              Andropid<span className="text-brand-mid">.</span>
-            </span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <div className="flex overflow-hidden rounded-full border border-border text-[11px] font-semibold">
-              {LANGUAGES.map((l) => (
-                <button
-                  key={l.value}
-                  onClick={() => setLanguage(l.value)}
-                  className={`px-2.5 py-1.5 transition ${
-                    lang === l.value ? "bg-ink text-surface" : "text-ink-muted"
-                  }`}
-                >
-                  {l.value.toUpperCase()}
-                </button>
-              ))}
-            </div>
-            <ThemeToggle />
-            <Link
-              href="/login"
-              className="rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
-            >
-              {t("landing.nav.signIn")}
+      <header className="sticky top-0 z-30 px-4 pt-3 sm:px-6">
+        <div
+          className={`mx-auto max-w-3xl rounded-3xl border border-border bg-surface/85 backdrop-blur-lg transition-shadow ${
+            scrolled ? "shadow-lg" : "shadow-none"
+          }`}
+        >
+          <div className="flex items-center justify-between gap-2 px-3 py-2">
+            <Link href="/" className="flex items-center gap-2 text-ink">
+              <LogoMark className="h-4 w-8" />
+              <span className="text-sm font-bold tracking-tight">
+                Andropid<span className="text-brand-mid">.</span>
+              </span>
             </Link>
+
+            <nav className="hidden items-center gap-1 md:flex">
+              {NAV_LINKS.map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  className="rounded-full px-3 py-1.5 text-xs font-semibold text-ink-muted transition hover:text-ink"
+                >
+                  {t(link.labelKey)}
+                </a>
+              ))}
+            </nav>
+
+            <div className="hidden items-center gap-2 md:flex">
+              <div className="flex overflow-hidden rounded-full border border-border text-[11px] font-semibold">
+                {LANGUAGES.map((l) => (
+                  <button
+                    key={l.value}
+                    onClick={() => setLanguage(l.value)}
+                    className={`px-2.5 py-1.5 transition ${
+                      lang === l.value ? "bg-ink text-surface" : "text-ink-muted"
+                    }`}
+                  >
+                    {l.value.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <ThemeToggle />
+              <Link
+                href="/login"
+                className="rounded-full bg-ink px-4 py-2 text-xs font-bold text-surface transition active:scale-95"
+              >
+                {t("landing.nav.signIn")}
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-1.5 md:hidden">
+              <div className="flex overflow-hidden rounded-full border border-border text-[11px] font-semibold">
+                {LANGUAGES.map((l) => (
+                  <button
+                    key={l.value}
+                    onClick={() => setLanguage(l.value)}
+                    className={`px-2 py-1 transition ${
+                      lang === l.value ? "bg-ink text-surface" : "text-ink-muted"
+                    }`}
+                  >
+                    {l.value.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+              <ThemeToggle />
+              <button
+                onClick={() => setMobileOpen((open) => !open)}
+                aria-label={t(mobileOpen ? "landing.nav.closeMenu" : "landing.nav.openMenu")}
+                aria-expanded={mobileOpen}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-ink"
+              >
+                <HamburgerIcon open={mobileOpen} className="h-4 w-4" />
+              </button>
+            </div>
           </div>
+
+          {mobileOpen && (
+            <div className="border-t border-border px-3 py-3 md:hidden">
+              <nav className="flex flex-col gap-1">
+                {NAV_LINKS.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="rounded-xl px-3 py-2 text-sm font-semibold text-ink-muted transition hover:bg-surface-raised hover:text-ink"
+                  >
+                    {t(link.labelKey)}
+                  </a>
+                ))}
+              </nav>
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="mt-2 block rounded-full bg-ink px-4 py-2.5 text-center text-sm font-bold text-surface transition active:scale-95"
+              >
+                {t("landing.nav.signIn")}
+              </Link>
+            </div>
+          )}
         </div>
       </header>
 
@@ -183,7 +272,7 @@ export default function LandingContent() {
       </section>
 
       {/* --- Fondasi: fakta yang bisa diverifikasi, bukan angka bombastis --- */}
-      <section className="mx-auto max-w-5xl px-5 py-14">
+      <section id="fondasi" className="mx-auto max-w-5xl px-5 py-14">
         <div className="text-center">
           <h2 className="text-2xl font-extrabold tracking-tight text-ink md:text-3xl">
             {t("landing.trust.title")}
@@ -232,7 +321,7 @@ export default function LandingContent() {
       </section>
 
       {/* --- FAQ: jujur, bukan diisi pertanyaan yang mengarahkan ------------ */}
-      <section className="mx-auto max-w-2xl px-5 py-14">
+      <section id="faq" className="mx-auto max-w-2xl px-5 py-14">
         <h2 className="text-center text-2xl font-extrabold tracking-tight text-ink md:text-3xl">
           {t("landing.faq.title")}
         </h2>
@@ -286,6 +375,33 @@ export default function LandingContent() {
         <p className="mt-3 text-xs text-ink-muted">{t("landing.footer.byline")}</p>
       </footer>
     </div>
+  );
+}
+
+function HamburgerIcon({ open, className }: { open: boolean; className?: string }) {
+  // Bar 1 dan 3 pindah ke garis tengah (y=12) dulu sebelum dirotasi — rotasi
+  // di sekitar titik pivot (12,12) yang bukan titik tengahnya sendiri bikin
+  // garisnya melenceng, bukan membentuk X yang rapi.
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" className={className}>
+      <line
+        x1="4"
+        y1={open ? 12 : 7}
+        x2="20"
+        y2={open ? 12 : 7}
+        className="transition-all"
+        transform={open ? "rotate(45 12 12)" : undefined}
+      />
+      <line x1="4" y1="12" x2="20" y2="12" className={`transition-opacity ${open ? "opacity-0" : ""}`} />
+      <line
+        x1="4"
+        y1={open ? 12 : 17}
+        x2="20"
+        y2={open ? 12 : 17}
+        className="transition-all"
+        transform={open ? "rotate(-45 12 12)" : undefined}
+      />
+    </svg>
   );
 }
 

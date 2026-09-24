@@ -773,6 +773,11 @@ const id: Record<string, string> = {
 
   // Landing page publik
   "landing.nav.signIn": "Masuk",
+  "landing.nav.pillars": "Pilar",
+  "landing.nav.foundation": "Fondasi",
+  "landing.nav.faq": "FAQ",
+  "landing.nav.openMenu": "Buka menu",
+  "landing.nav.closeMenu": "Tutup menu",
   "landing.hero.eyebrow": "Personal life tracker",
   "landing.hero.headline": "Keuangan, waktu, branding, kesehatan, dan jurnal. Satu app, bukan lima.",
   "landing.hero.subheadline": "Andropid nyatetin lima sisi hidup kamu di satu tempat, biar nggak ada yang kececer — dan biar kamu beneran tahu ke mana waktu dan uang kamu pergi.",
@@ -1592,6 +1597,11 @@ const en: Record<string, string> = {
 
   // Public landing page
   "landing.nav.signIn": "Sign in",
+  "landing.nav.pillars": "Pillars",
+  "landing.nav.foundation": "Foundation",
+  "landing.nav.faq": "FAQ",
+  "landing.nav.openMenu": "Open menu",
+  "landing.nav.closeMenu": "Close menu",
   "landing.hero.eyebrow": "Personal life tracker",
   "landing.hero.headline": "Finance, time, branding, health, and journaling. One app, not five.",
   "landing.hero.subheadline": "Andropid tracks five sides of your life in one place, so nothing slips through — and so you actually know where your time and money go.",
