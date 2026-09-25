@@ -48,6 +48,15 @@ const ACCENT_BG_CLASS: Record<string, string> = {
   "/jurnal": "bg-brand-mid/10",
 };
 
+/** 2 = kotak lebar (lg:col-span-2) di grid bento pilar, 1 = kotak normal. */
+const BENTO_SPAN: Record<string, 1 | 2> = {
+  "/keuangan": 2,
+  "/waktu": 2,
+  "/branding": 2,
+  "/kesehatan": 1,
+  "/jurnal": 1,
+};
+
 const TRUST_KEYS = ["isolation", "offline", "backup", "invite"] as const;
 const FAQ_KEYS = ["q1", "q2", "q3", "q4", "q5", "q6", "q7"] as const;
 
@@ -269,8 +278,15 @@ export default function LandingContent() {
         </div>
       </section>
 
-      {/* --- Lima pilar ---------------------------------------------------- */}
-      <section id="pilar" className="mx-auto max-w-5xl px-5 py-14">
+      {/* --- Lima pilar (bento grid di desktop) ----------------------------- */}
+      {/* Ukuran kotak bukan dekorasi acak — mengikuti urutan penekanan yang
+          sudah ditulis di landing.pillars.subtitle: Keuangan & Waktu jadi
+          inti (kotak besar), Branding pembeda (kotak medium), Kesehatan &
+          Jurnal pelengkap (kotak kecil), gamifikasi jadi penutup selebar
+          grid karena menembus kelimanya, bukan modul ke-6. Di mobile/tablet
+          semua kembali seragam satu/dua kolom — variasi ukuran cuma masuk
+          akal kalau ruangnya cukup. */}
+      <section id="pilar" className="mx-auto max-w-6xl px-5 py-14">
         <div className="text-center">
           <h2 className="text-2xl font-extrabold tracking-tight text-ink md:text-3xl">
             {t("landing.pillars.title")}
@@ -280,21 +296,28 @@ export default function LandingContent() {
           </p>
         </div>
 
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {PILLAR_HREFS.map((href) => {
             const Icon = iconFor(href);
             const key = href.slice(1);
+            const big = BENTO_SPAN[href] === 2;
             return (
               <div
                 key={href}
-                className="rounded-2xl border border-border bg-surface-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-ink/20 hover:shadow-md"
+                className={`rounded-2xl border border-border bg-surface-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-ink/20 hover:shadow-md ${
+                  big ? "lg:col-span-2" : "lg:col-span-1"
+                }`}
               >
                 <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-2xl ${ACCENT_BG_CLASS[href]} ${ACCENT_CLASS[href]}`}
+                  className={`flex items-center justify-center rounded-2xl ${ACCENT_BG_CLASS[href]} ${ACCENT_CLASS[href]} ${
+                    big ? "h-14 w-14" : "h-12 w-12"
+                  }`}
                 >
-                  <Icon className="h-5 w-5" strokeWidth={2} />
+                  <Icon className={big ? "h-6 w-6" : "h-5 w-5"} strokeWidth={2} />
                 </div>
-                <h3 className="mt-4 text-sm font-bold text-ink">{t(`landing.pillar.${key}.title`)}</h3>
+                <h3 className={`mt-4 font-bold text-ink ${big ? "text-base" : "text-sm"}`}>
+                  {t(`landing.pillar.${key}.title`)}
+                </h3>
                 <p className="mt-1.5 text-sm leading-relaxed text-ink-muted">
                   {t(`landing.pillar.${key}.body`)}
                 </p>
@@ -303,8 +326,9 @@ export default function LandingContent() {
           })}
 
           {/* Kartu keenam sengaja bukan pilar — gamifikasi menembus kelimanya,
-              bukan modul tersendiri, jadi ditempatkan sebagai penutup grid. */}
-          <div className="rounded-2xl border border-border bg-surface-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+              bukan modul tersendiri, jadi ditempatkan sebagai penutup grid
+              selebar penuh (lg:col-span-4). */}
+          <div className="rounded-2xl border border-border bg-surface-card p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md lg:col-span-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-start to-brand-end text-white">
               <BoltIcon className="h-5 w-5" />
             </div>
