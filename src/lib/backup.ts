@@ -24,6 +24,7 @@ const COLLECTIONS = [
   "content",
   "habits",
   "habitLogs",
+  "exerciseRoutines",
   "metrics",
   "journal",
 ] as const;

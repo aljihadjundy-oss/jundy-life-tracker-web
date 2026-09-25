@@ -5,12 +5,15 @@ import AppShell from "@/components/AppShell";
 import TopBar from "@/components/TopBar";
 import { useAuth } from "@/lib/auth-context";
 import {
+  addExerciseRoutine,
   addHabit,
+  deleteExerciseRoutine,
   deleteHabit,
   deleteHabits,
   patchMetrics,
   saveHealthSettings,
   setHabitLog,
+  subscribeExerciseRoutines,
   subscribeHabitLogs,
   subscribeHabits,
   subscribeHealthSettings,
@@ -21,9 +24,11 @@ import {
   EMPTY_METRICS,
   type DailyMetrics,
   type ExerciseLog,
+  type ExerciseRoutine,
   type Habit,
   type HabitLog,
   type HealthSettings,
+  type NewExerciseRoutine,
   type NewHabit,
 } from "@/types/kesehatan";
 import { cycleInfo, sleepHours, suggestions, waterTarget } from "@/lib/cycle";
@@ -41,6 +46,7 @@ import SleepCard from "./components/SleepCard";
 import EnergyMoodCard from "./components/EnergyMoodCard";
 import SymptomsCard from "./components/SymptomsCard";
 import ExerciseCard from "./components/ExerciseCard";
+import ExerciseRoutineForm from "./components/ExerciseRoutineForm";
 import HealthSettingsSheet from "./components/HealthSettingsSheet";
 import SelectionBar from "@/components/SelectionBar";
 import { useSelection } from "@/lib/useSelection";
@@ -70,11 +76,13 @@ function KesehatanContent() {
   const [logs, setLogs] = useState<HabitLog[]>([]);
   const [metricsList, setMetricsList] = useState<DailyMetrics[]>([]);
   const [settings, setSettings] = useState<HealthSettings>(DEFAULT_HEALTH_SETTINGS);
+  const [routines, setRoutines] = useState<ExerciseRoutine[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("today");
   const [selectedDate, setSelectedDate] = useState(todayISO());
   const [monthKey, setMonthKey] = useState(currentMonthKey());
   const [showHabitForm, setShowHabitForm] = useState(false);
+  const [showRoutineForm, setShowRoutineForm] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const selection = useSelection();
 
@@ -87,11 +95,13 @@ function KesehatanContent() {
     const unsubLogs = subscribeHabitLogs(user.uid, setLogs);
     const unsubMetrics = subscribeMetrics(user.uid, setMetricsList);
     const unsubSettings = subscribeHealthSettings(user.uid, setSettings);
+    const unsubRoutines = subscribeExerciseRoutines(user.uid, setRoutines);
     return () => {
       unsubHabits();
       unsubLogs();
       unsubMetrics();
       unsubSettings();
+      unsubRoutines();
     };
   }, [user]);
 
@@ -270,6 +280,25 @@ function KesehatanContent() {
     if (user) awardXpInBackground(user.uid, "exercise");
   }
 
+  function handleDeleteLoggedExercise(index: number) {
+    const entry = todayMetrics.exercise[index];
+    if (!entry) return;
+    patchToday({
+      exercise: todayMetrics.exercise.filter((_, i) => i !== index),
+      exerciseMinutes: Math.max(0, todayMetrics.exerciseMinutes - entry.minutes),
+    });
+  }
+
+  function handleAddRoutine(data: NewExerciseRoutine) {
+    if (!user) return;
+    reportFailure(addExerciseRoutine(user.uid, data), t("notify.saveFailed"));
+  }
+
+  function handleDeleteRoutine(id: string) {
+    if (!user) return;
+    reportFailure(deleteExerciseRoutine(user.uid, id), t("notify.deleteFailed"));
+  }
+
   return (
     <>
       <TopBar
@@ -382,8 +411,12 @@ function KesehatanContent() {
           <ExerciseCard
             heading={movementHeading}
             suggestions={movement}
+            routines={routines}
             logged={todayMetrics.exercise}
             onLog={logExercise}
+            onAddRoutine={() => setShowRoutineForm(true)}
+            onDeleteRoutine={handleDeleteRoutine}
+            onDeleteLog={handleDeleteLoggedExercise}
           />
           {tracksCycle && settings.cycleStart && (
             <CycleCalendar
@@ -467,6 +500,9 @@ function KesehatanContent() {
       )}
 
       {showHabitForm && <HabitForm onSubmit={handleAddHabit} onClose={() => setShowHabitForm(false)} />}
+      {showRoutineForm && (
+        <ExerciseRoutineForm onSubmit={handleAddRoutine} onClose={() => setShowRoutineForm(false)} />
+      )}
       {showSettings && (
         <HealthSettingsSheet
           settings={effectiveSettings}

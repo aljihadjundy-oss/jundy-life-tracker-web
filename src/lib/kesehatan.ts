@@ -21,9 +21,11 @@ import {
   EMPTY_METRICS,
   type DailyMetrics,
   type ExerciseLog,
+  type ExerciseRoutine,
   type Habit,
   type HabitLog,
   type HealthSettings,
+  type NewExerciseRoutine,
   type NewHabit,
 } from "@/types/kesehatan";
 
@@ -37,6 +39,33 @@ function habitLogsRef(uid: string) {
 
 function metricsRef(uid: string) {
   return collection(db, "users", uid, "metrics");
+}
+
+function exerciseRoutinesRef(uid: string) {
+  return collection(db, "users", uid, "exerciseRoutines");
+}
+
+export function subscribeExerciseRoutines(uid: string, onData: (routines: ExerciseRoutine[]) => void) {
+  const q = query(exerciseRoutinesRef(uid), orderBy("createdAt", "asc"));
+  return onSnapshot(q, (snapshot) => {
+    const items = snapshot.docs.map((d) => {
+      const data = d.data();
+      const createdAt = data.createdAt instanceof Timestamp ? data.createdAt.toMillis() : Date.now();
+      return { id: d.id, name: data.name, minutes: data.minutes, createdAt } as ExerciseRoutine;
+    });
+    onData(items);
+  });
+}
+
+export async function addExerciseRoutine(uid: string, routine: NewExerciseRoutine) {
+  await addDoc(exerciseRoutinesRef(uid), {
+    ...routine,
+    createdAt: serverTimestamp(),
+  });
+}
+
+export async function deleteExerciseRoutine(uid: string, id: string) {
+  await deleteDoc(doc(db, "users", uid, "exerciseRoutines", id));
 }
 
 export function subscribeHabits(uid: string, onData: (habits: Habit[]) => void) {

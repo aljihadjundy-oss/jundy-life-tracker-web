@@ -12,10 +12,29 @@ export type HabitLog = {
 };
 
 export type ExerciseLog = {
-  /** Slug of a suggestion from EXERCISE_BANK, or a free-form name. */
+  /** Slug of a suggestion from EXERCISE_BANK, or a free-form name from a
+   * saved routine or a one-off manual entry. */
   name: string;
   minutes: number;
+  /** True when `name` is a literal label the user typed rather than a
+   * translation slug from the suggestion bank — render it as-is instead of
+   * running it through t(`exercise.${name}`). */
+  custom?: boolean;
 };
+
+/**
+ * User-defined exercise, saved so it can be logged again with one tap —
+ * lets someone build their own routine from scratch instead of being limited
+ * to the phase/type-based suggestions in EXERCISE_BANK.
+ */
+export type ExerciseRoutine = {
+  id: string;
+  name: string;
+  minutes: number;
+  createdAt: number; // epoch millis
+};
+
+export type NewExerciseRoutine = Omit<ExerciseRoutine, "id" | "createdAt">;
 
 /**
  * One document per day at users/{uid}/metrics/{date}. The original three

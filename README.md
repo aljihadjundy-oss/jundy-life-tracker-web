@@ -133,6 +133,9 @@ users/{uid}/tasks/{id}            → { title, note, dueDate, startTime, duratio
 users/{uid}/content/{id}          → { title, platform, postDate, status, note, createdAt }
 users/{uid}/habits/{id}           → { name, createdAt }
 users/{uid}/habitLogs/{date_habitId} → { habitId, date }
+users/{uid}/exerciseRoutines/{id} → { name, minutes, createdAt }
+                                    (rutinitas olahraga buatan sendiri user, dicatat lewat
+                                     tab Body di Kesehatan — beda dari saran algoritmik)
 users/{uid}/metrics/{date}        → { date, sleepHours, actualBedtime, actualWakeTime,
                                       exerciseMinutes, waterGlasses, energy, mood, symptoms,
                                       mealsDone, exercise }
