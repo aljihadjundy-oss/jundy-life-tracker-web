@@ -10,8 +10,10 @@ import {
   isDuplicateTransaction,
   monthSummary,
   monthlyInstallments,
+  monthlyTrend,
   needWantSplit,
   netWorth,
+  overdueDebts,
   spendByCategory,
   totalAssets,
   totalDebt,
@@ -345,4 +347,37 @@ test("isDuplicateTransaction: daftar existing kosong tidak pernah duplikat", () 
     isDuplicateTransaction({ date: "2026-09-11", amount: 50_000, type: "expense", accountId: "a1" }, []),
     false
   );
+});
+
+// ---------------------------------------------------------------------------
+// monthlyTrend & overdueDebts
+// ---------------------------------------------------------------------------
+
+test("monthlyTrend: mengelompokkan per bulan, dari terlama ke terbaru", () => {
+  const points = monthlyTrend(
+    [
+      tx({ id: "t1", date: "2026-08-05", type: "income", amount: 1000 }),
+      tx({ id: "t2", date: "2026-08-10", type: "expense", amount: 200 }),
+      tx({ id: "t3", date: "2026-09-01", type: "income", amount: 500 }),
+    ],
+    2,
+    "2026-09"
+  );
+  assert.deepEqual(points, [
+    { month: "2026-08", income: 1000, expense: 200 },
+    { month: "2026-09", income: 500, expense: 0 },
+  ]);
+});
+
+test("overdueDebts: hanya debt active dengan dueDate yang sudah lewat", () => {
+  const rows = overdueDebts(
+    [
+      debt({ id: "d1", status: "active", dueDate: "2026-09-01" }),
+      debt({ id: "d2", status: "active", dueDate: "2026-09-30" }),
+      debt({ id: "d3", status: "active", dueDate: "" }),
+      debt({ id: "d4", status: "paid", dueDate: "2026-09-01" }),
+    ],
+    "2026-09-15"
+  );
+  assert.deepEqual(rows.map((r) => r.id), ["d1"]);
 });

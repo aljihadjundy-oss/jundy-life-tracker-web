@@ -53,8 +53,16 @@ import {
   type RecurringTransaction,
   type Transaction,
 } from "@/types/finance";
-import { accountBalance, budgetLines, goalsByProgress, unassignedTransactions } from "@/lib/money";
-import { addMonths, currentMonthKey, formatMonth, todayISO } from "@/lib/format";
+import {
+  accountBalance,
+  budgetLines,
+  goalsByProgress,
+  monthlyInstallments,
+  overdueDebts,
+  totalDebt,
+  unassignedTransactions,
+} from "@/lib/money";
+import { addMonths, currentMonthKey, formatCurrency, formatMonth, todayISO } from "@/lib/format";
 import TransactionCard from "./components/TransactionCard";
 import TransactionForm from "./components/TransactionForm";
 import ImportSheet from "./components/ImportSheet";
@@ -66,6 +74,7 @@ import GoalForm from "./components/GoalForm";
 import AllocationSheet from "./components/AllocationSheet";
 import ContributionSheet from "./components/ContributionSheet";
 import RecurringSection from "./components/RecurringSection";
+import StatGrid from "./components/StatGrid";
 import RecurringTransactionForm from "./components/RecurringTransactionForm";
 import { AccountCard, BudgetCard, DebtCard, GoalCard } from "./components/MoneyCards";
 import { useT } from "@/lib/i18n";
@@ -151,6 +160,15 @@ function KeuanganContent() {
   );
   const goalRows = useMemo(() => goalsByProgress(goals), [goals]);
   const orphans = useMemo(() => unassignedTransactions(transactions), [transactions]);
+  const overdue = useMemo(() => overdueDebts(debts, todayISO()), [debts]);
+  const goalTotals = useMemo(
+    () => ({
+      saved: goals.reduce((sum, g) => sum + g.currentAmount, 0),
+      target: goals.reduce((sum, g) => sum + g.targetAmount, 0),
+      reached: goalRows.filter((row) => row.ratio >= 1).length,
+    }),
+    [goals, goalRows]
+  );
 
   const uid = user?.uid;
 
@@ -238,27 +256,46 @@ function KeuanganContent() {
     <>
       <TopBar title={t("finance.title")} subtitle={t("finance.subtitle")} />
 
-      <div className="no-scrollbar mt-4 flex gap-1.5 overflow-x-auto px-5">
-        {TABS.map((item) => (
-          <button
-            key={item}
-            onClick={() => goTo(item)}
-            className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
-              tab === item ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
-            }`}
-          >
-            {t(`money.tab.${item}`)}
-          </button>
-        ))}
-      </div>
+      <div className="mt-4 md:flex md:items-start md:gap-6">
+        {/* Desktop-only: the horizontal pill bar doesn't scale to a wide
+            screen with six tabs, so a persistent sidebar replaces it above
+            the md breakpoint. Mobile keeps the pill bar untouched. */}
+        <nav className="hidden shrink-0 flex-col gap-1 md:sticky md:top-4 md:flex md:w-44 md:pl-5">
+          {TABS.map((item) => (
+            <button
+              key={item}
+              onClick={() => goTo(item)}
+              className={`rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold transition ${
+                tab === item ? "bg-ink text-surface" : "text-ink-muted hover:bg-surface-raised"
+              }`}
+            >
+              {t(`money.tab.${item}`)}
+            </button>
+          ))}
+        </nav>
 
-      {loading && (
-        <div className="flex justify-center py-16">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-ink" />
-        </div>
-      )}
+        <div className="min-w-0 flex-1">
+          <div className="no-scrollbar flex gap-1.5 overflow-x-auto px-5 md:hidden">
+            {TABS.map((item) => (
+              <button
+                key={item}
+                onClick={() => goTo(item)}
+                className={`shrink-0 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
+                  tab === item ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+                }`}
+              >
+                {t(`money.tab.${item}`)}
+              </button>
+            ))}
+          </div>
 
-      {!loading && tab === "overview" && (
+          {loading && (
+            <div className="flex justify-center py-16">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-border border-t-ink" />
+            </div>
+          )}
+
+          {!loading && tab === "overview" && (
         <div className="mt-4">
           <OverviewTab
             transactions={transactions}
@@ -341,6 +378,26 @@ function KeuanganContent() {
           />
 
           <div className="mt-3 flex flex-col gap-2.5 px-5 pb-24">
+            {tab === "debts" && debts.length > 0 && (
+              <StatGrid
+                items={[
+                  { label: t("money.totalDebt"), value: formatCurrency(totalDebt(debts)), tone: "text-red-500" },
+                  { label: t("money.installmentsDue"), value: formatCurrency(monthlyInstallments(debts)), tone: "text-amber-500" },
+                  { label: t("money.overdueCount"), value: String(overdue.length), tone: overdue.length > 0 ? "text-red-500" : "text-ink" },
+                ]}
+              />
+            )}
+
+            {tab === "goals" && goals.length > 0 && (
+              <StatGrid
+                items={[
+                  { label: t("money.totalSaved"), value: formatCurrency(goalTotals.saved) },
+                  { label: t("money.totalTarget"), value: formatCurrency(goalTotals.target) },
+                  { label: t("money.goalsReachedCount"), value: `${goalTotals.reached}/${goals.length}`, tone: "text-accent-finance" },
+                ]}
+              />
+            )}
+
             {tab === "transactions" && (
               <RecurringSection
                 items={recurring}
@@ -444,6 +501,8 @@ function KeuanganContent() {
           <SelectionBar selection={selection} allIds={visibleIds} onDelete={handleBulkDelete} />
         </>
       )}
+        </div>
+      </div>
 
       {editing?.kind === "transaction" && (
         <TransactionForm

@@ -8,6 +8,7 @@ import {
   budgetLines,
   goalsByProgress,
   monthlyInstallments,
+  monthlyTrend,
   monthSummary,
   needWantSplit,
   netWorth,
@@ -54,6 +55,17 @@ export default function OverviewTab({
   const categories = useMemo(() => spendByCategory(transactions, month).slice(0, 5), [transactions, month]);
   const split = useMemo(() => needWantSplit(transactions, month), [transactions, month]);
   const installments = useMemo(() => monthlyInstallments(debts), [debts]);
+  const trend = useMemo(() => monthlyTrend(transactions, 6), [transactions]);
+  const trendMax = Math.max(1, ...trend.flatMap((p) => [p.income, p.expense]));
+  const trendPoints = (key: "income" | "expense") =>
+    trend
+      .map((p, i) => {
+        const x = trend.length > 1 ? (i / (trend.length - 1)) * 200 : 100;
+        const y = 60 - (p[key] / trendMax) * 56;
+        return `${x},${y}`;
+      })
+      .join(" ");
+  const hasTrend = trend.some((p) => p.income > 0 || p.expense > 0);
 
   const recent = useMemo(
     () => transactions.filter((tx) => tx.date.slice(0, 7) === month).slice(0, 5),
@@ -98,6 +110,40 @@ export default function OverviewTab({
           tone="text-amber-500"
         />
       </div>
+
+      {hasTrend && (
+        <Card title={t("money.trend6Months")}>
+          <svg viewBox="0 0 200 60" className="h-16 w-full" preserveAspectRatio="none">
+            <polyline
+              points={trendPoints("income")}
+              fill="none"
+              className="stroke-accent-finance"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <polyline
+              points={trendPoints("expense")}
+              fill="none"
+              className="stroke-red-500"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <div className="mt-1.5 flex justify-between text-[10px] text-ink-muted">
+            {trend.map((p) => (
+              <span key={p.month} className="capitalize">
+                {formatMonth(p.month).slice(0, 3)}
+              </span>
+            ))}
+          </div>
+          <div className="mt-3 flex gap-4 text-[11px] text-ink-muted">
+            <Legend className="bg-accent-finance" label={t("money.type.income")} />
+            <Legend className="bg-red-500" label={t("money.type.expense")} />
+          </div>
+        </Card>
+      )}
 
       {/* Warning Zone — budgets whose Remaining went negative. */}
       <Card title={t("money.warningZone")} onMore={() => onGoTo("budgets")}>

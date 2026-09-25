@@ -1,4 +1,4 @@
-import { currentMonthKey } from "./format";
+import { addMonths, currentMonthKey } from "./format";
 import type {
   Account,
   Allocation,
@@ -120,6 +120,11 @@ export function monthlyInstallments(debts: Debt[]) {
     .reduce((sum, debt) => sum + debt.installment, 0);
 }
 
+/** Active debts whose due date has already passed — mirrors DebtCard's own check. */
+export function overdueDebts(debts: Debt[], today: string) {
+  return debts.filter((debt) => debt.status === "active" && debt.dueDate !== "" && debt.dueDate < today);
+}
+
 export type GoalProgress = { goal: Goal; ratio: number; remaining: number };
 
 /**
@@ -168,6 +173,25 @@ export function monthSummary(
   const actual = lines.reduce((sum, line) => sum + line.actual, 0);
 
   return { month, income, expense, net: income - expense, planned, actual, budgetLeft: planned - actual };
+}
+
+export type MonthlyTrendPoint = { month: string; income: number; expense: number };
+
+/** Income/expense per month, oldest first, for a simple trend line. */
+export function monthlyTrend(transactions: Transaction[], months: number, end = currentMonthKey()) {
+  const points: MonthlyTrendPoint[] = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const month = addMonths(end, -i);
+    let income = 0;
+    let expense = 0;
+    for (const tx of transactions) {
+      if (monthOf(tx.date) !== month) continue;
+      if (tx.type === "income") income += tx.amount;
+      else if (tx.type === "expense") expense += tx.amount;
+    }
+    points.push({ month, income, expense });
+  }
+  return points;
 }
 
 export type NetWorth = { assets: number; debt: number; net: number };
