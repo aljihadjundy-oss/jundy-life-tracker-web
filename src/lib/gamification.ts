@@ -93,15 +93,24 @@ export type AwardResult = {
  * dialog over the thing the user actually came to do, which has already been
  * written.
  */
-export function awardXpInBackground(uid: string, action: GameAction) {
-  void awardXp(uid, action)
+export function awardXpInBackground(uid: string, action: GameAction, date?: string) {
+  void awardXp(uid, action, date)
     .then(celebrate)
     .catch(() => {});
 }
 
-export async function awardXp(uid: string, action: GameAction): Promise<AwardResult> {
+/**
+ * `date` defaults to today but can be overridden — Kesehatan lets you backfill
+ * a past day's water/meals/sleep/exercise (see the History tab), and crediting
+ * that XP to today instead of the day it actually happened would both misstate
+ * today's total and leave the backfilled day's streak/goal still unmet.
+ */
+export async function awardXp(
+  uid: string,
+  action: GameAction,
+  date: string = todayISO()
+): Promise<AwardResult> {
   const gained = XP_REWARDS[action];
-  const today = todayISO();
 
   return runTransaction(db, async (tx) => {
     const ref = statsRef(uid);
@@ -109,12 +118,12 @@ export async function awardXp(uid: string, action: GameAction): Promise<AwardRes
     const before = normalize(snap.data());
 
     const xpByDate = { ...before.xpByDate };
-    const todayBefore = xpByDate[today] ?? 0;
-    xpByDate[today] = todayBefore + gained;
+    const dateBefore = xpByDate[date] ?? 0;
+    xpByDate[date] = dateBefore + gained;
 
-    const cutoff = addDaysISO(today, -MAX_HISTORY_DAYS);
-    for (const date of Object.keys(xpByDate)) {
-      if (date < cutoff) delete xpByDate[date];
+    const cutoff = addDaysISO(todayISO(), -MAX_HISTORY_DAYS);
+    for (const d of Object.keys(xpByDate)) {
+      if (d < cutoff) delete xpByDate[d];
     }
 
     const counterKey = COUNTER_BY_ACTION[action];
@@ -140,7 +149,7 @@ export async function awardXp(uid: string, action: GameAction): Promise<AwardRes
       leveledUpTo: levelAfter > levelBefore ? levelAfter : null,
       newBadges,
       goalJustReached:
-        todayBefore < before.dailyGoal && xpByDate[today] >= before.dailyGoal,
+        dateBefore < before.dailyGoal && xpByDate[date] >= before.dailyGoal,
     };
   });
 }

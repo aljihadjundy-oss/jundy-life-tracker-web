@@ -27,7 +27,7 @@ import {
   type NewHabit,
 } from "@/types/kesehatan";
 import { cycleInfo, sleepHours, suggestions, waterTarget } from "@/lib/cycle";
-import { addDaysISO, currentMonthKey, todayISO } from "@/lib/format";
+import { addDaysISO, currentMonthKey, formatDate, todayISO } from "@/lib/format";
 import HealthSummaryCard from "./components/HealthSummaryCard";
 import DayPicker from "./components/DayPicker";
 import DaySummaryCard from "./components/DaySummaryCard";
@@ -116,6 +116,14 @@ function KesehatanContent() {
   const today = todayISO();
   const todayMetrics = metricsByDate.get(today) ?? EMPTY_METRICS(today);
   const selectedMetrics = metricsByDate.get(selectedDate) ?? null;
+  // The "Hari Ini" tab's cards (mood/water/meals/sleep/gejala) are keyed off
+  // `selectedDate`, not literally today — this is what lets History's day
+  // picker jump back and backfill a day that was missed, through the exact
+  // same editable cards instead of a second, easy-to-desync read-only view.
+  // Exercise logging (Body tab) stays pinned to real today on purpose: its
+  // suggestions are based on today's cycle phase, so backfilling it via a
+  // suggestion button for a past day's phase wouldn't make sense.
+  const activeMetrics = metricsByDate.get(selectedDate) ?? EMPTY_METRICS(selectedDate);
 
   const logsByDate = useMemo(() => {
     const map = new Map<string, Set<string>>();
@@ -186,6 +194,11 @@ function KesehatanContent() {
     void patchMetrics(user.uid, today, patch);
   }
 
+  function patchActive(patch: Partial<DailyMetrics>) {
+    if (!user) return;
+    void patchMetrics(user.uid, selectedDate, patch);
+  }
+
   function handleAddHabit(data: NewHabit) {
     if (!user) return;
     reportFailure(addHabit(user.uid, data), t("notify.saveFailed"));
@@ -204,7 +217,7 @@ function KesehatanContent() {
   function handleToggleHabit(habitId: string, next: boolean) {
     if (!user) return;
     reportFailure(setHabitLog(user.uid, habitId, selectedDate, next), t("notify.saveFailed"));
-    if (next) awardXpInBackground(user.uid, "habit");
+    if (next) awardXpInBackground(user.uid, "habit", selectedDate);
   }
 
   function handleSaveSettings(patch: Partial<HealthSettings>) {
@@ -212,35 +225,37 @@ function KesehatanContent() {
     reportFailure(saveHealthSettings(user.uid, patch), t("notify.saveFailed"));
   }
 
-  // Guarded to once per real event per day — otherwise tapping the water
-  // stepper or re-toggling a meal would mint XP on every click instead of
-  // rewarding the first time that thing actually happened today.
+  // Guarded to once per real event per (selected) day — otherwise tapping the
+  // water stepper or re-toggling a meal would mint XP on every click instead
+  // of rewarding the first time that thing actually happened. Keyed off
+  // `selectedDate` rather than always "today" so backfilling a missed day
+  // through the History tab credits XP to the day it actually happened.
   function handleWaterChange(next: number) {
-    if (user && todayMetrics.waterGlasses === 0 && next > 0) {
-      awardXpInBackground(user.uid, "water");
+    if (user && activeMetrics.waterGlasses === 0 && next > 0) {
+      awardXpInBackground(user.uid, "water", selectedDate);
     }
-    patchToday({ waterGlasses: next });
+    patchActive({ waterGlasses: next });
   }
 
   function handleToggleMeal(id: string) {
-    const alreadyDone = todayMetrics.mealsDone.includes(id);
-    patchToday({
+    const alreadyDone = activeMetrics.mealsDone.includes(id);
+    patchActive({
       mealsDone: alreadyDone
-        ? todayMetrics.mealsDone.filter((x) => x !== id)
-        : [...todayMetrics.mealsDone, id],
+        ? activeMetrics.mealsDone.filter((x) => x !== id)
+        : [...activeMetrics.mealsDone, id],
     });
-    if (!alreadyDone && user) awardXpInBackground(user.uid, "meal");
+    if (!alreadyDone && user) awardXpInBackground(user.uid, "meal", selectedDate);
   }
 
   function handleSleepLog(patch: { actualBedtime?: string; actualWakeTime?: string }) {
-    const actualBedtime = patch.actualBedtime ?? todayMetrics.actualBedtime;
-    const actualWakeTime = patch.actualWakeTime ?? todayMetrics.actualWakeTime;
-    const wasLogged = Boolean(todayMetrics.actualBedtime && todayMetrics.actualWakeTime);
+    const actualBedtime = patch.actualBedtime ?? activeMetrics.actualBedtime;
+    const actualWakeTime = patch.actualWakeTime ?? activeMetrics.actualWakeTime;
+    const wasLogged = Boolean(activeMetrics.actualBedtime && activeMetrics.actualWakeTime);
     const nowLogged = Boolean(actualBedtime && actualWakeTime);
     if (user && !wasLogged && nowLogged) {
-      awardXpInBackground(user.uid, "sleep");
+      awardXpInBackground(user.uid, "sleep", selectedDate);
     }
-    patchToday({
+    patchActive({
       actualBedtime,
       actualWakeTime,
       sleepHours: nowLogged ? sleepHours(actualBedtime, actualWakeTime) : 0,
@@ -288,33 +303,69 @@ function KesehatanContent() {
       {tab === "today" && (
         <div className="mt-4 flex flex-col gap-4 pb-6">
           <HealthSummaryCard streak={streak} doneToday={doneToday} totalHabits={habits.length} />
+
+          {/* Semua kartu di bawah ini terikat ke `selectedDate`, bukan selalu
+              hari ini — jadi hari yang kelewat bisa dibetulkan lewat tombol
+              "Edit" di tab History, lewat kartu yang persis sama, bukan
+              tampilan kedua yang gampang beda datanya. */}
+          <div className="flex items-center justify-between px-5">
+            <button
+              onClick={() => setSelectedDate(addDaysISO(selectedDate, -1))}
+              aria-label={t("health.previousDay")}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-raised text-ink-muted transition active:scale-90"
+            >
+              ‹
+            </button>
+            <div className="text-center">
+              <p className="text-sm font-bold text-ink">
+                {selectedDate === today ? t("health.legend.today") : formatDate(selectedDate)}
+              </p>
+              {selectedDate !== today && (
+                <button
+                  onClick={() => setSelectedDate(today)}
+                  className="text-[11px] font-medium text-ink-muted underline-offset-2 hover:underline"
+                >
+                  {t("health.backToToday")}
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setSelectedDate(addDaysISO(selectedDate, 1))}
+              disabled={selectedDate >= today}
+              aria-label={t("health.nextDay")}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-raised text-ink-muted transition active:scale-90 disabled:opacity-30"
+            >
+              ›
+            </button>
+          </div>
+
           {/* Mood/energy/gejala dulu cuma muncul buat yang nge-track siklus —
               padahal itu metrik kesehatan universal. Sekarang berlaku buat
               semua body mode; SymptomsCard sendiri yang pilih daftar gejala
               yang relevan (siklus/hamil/umum) lewat prop `mode`. */}
           <EnergyMoodCard
-            energy={todayMetrics.energy}
-            mood={todayMetrics.mood}
+            energy={activeMetrics.energy}
+            mood={activeMetrics.mood}
             week={energyWeek}
-            onEnergy={(energy) => patchToday({ energy })}
-            onMood={(mood) => patchToday({ mood })}
+            onEnergy={(energy) => patchActive({ energy })}
+            onMood={(mood) => patchActive({ mood })}
           />
-          <WaterCard glasses={todayMetrics.waterGlasses} target={target} onChange={handleWaterChange} />
-          <MealsCard meals={settings.meals} done={todayMetrics.mealsDone} onToggle={handleToggleMeal} />
+          <WaterCard glasses={activeMetrics.waterGlasses} target={target} onChange={handleWaterChange} />
+          <MealsCard meals={settings.meals} done={activeMetrics.mealsDone} onToggle={handleToggleMeal} />
           <SleepCard
-            actualBedtime={todayMetrics.actualBedtime}
-            actualWakeTime={todayMetrics.actualWakeTime}
+            actualBedtime={activeMetrics.actualBedtime}
+            actualWakeTime={activeMetrics.actualWakeTime}
             scheduleBedtime={settings.bedtime}
             onChange={handleSleepLog}
           />
           <SymptomsCard
             mode={bodyMode}
-            selected={todayMetrics.symptoms}
+            selected={activeMetrics.symptoms}
             onToggle={(symptom) =>
-              patchToday({
-                symptoms: todayMetrics.symptoms.includes(symptom)
-                  ? todayMetrics.symptoms.filter((x) => x !== symptom)
-                  : [...todayMetrics.symptoms, symptom],
+              patchActive({
+                symptoms: activeMetrics.symptoms.includes(symptom)
+                  ? activeMetrics.symptoms.filter((x) => x !== symptom)
+                  : [...activeMetrics.symptoms, symptom],
               })
             }
           />
@@ -351,8 +402,14 @@ function KesehatanContent() {
             <DayPicker selected={selectedDate} onSelect={setSelectedDate} completeDates={completeDates} />
           </div>
 
-          <div className="mt-1">
+          <div className="mt-1 flex flex-col gap-2">
             <DaySummaryCard metrics={selectedMetrics} settings={effectiveSettings} waterTarget={target} />
+            <button
+              onClick={() => setTab("today")}
+              className="mx-5 rounded-2xl border border-border py-2.5 text-xs font-bold text-ink transition active:scale-95"
+            >
+              {selectedDate === today ? t("health.editToday") : t("health.editThisDay")}
+            </button>
           </div>
 
           <div className="mt-5 flex items-center justify-between px-5">
