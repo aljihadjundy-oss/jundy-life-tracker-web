@@ -2,11 +2,13 @@
 
 import { useState } from "react";
 import {
+  CATEGORY_GROUPS,
   TRANSACTION_TYPES,
   TRANSFER_CATEGORY,
   categoriesFor,
   categoryLabel,
   type Account,
+  type CategoryGroup,
   type NeedWant,
   type NewTransaction,
   type Transaction,
@@ -33,7 +35,7 @@ export default function TransactionForm({
   accounts: Account[];
   /** Expense categories the user typed in beyond the fixed list. */
   customCategories: string[];
-  onAddCategory: (name: string) => void;
+  onAddCategory: (name: string, group: CategoryGroup) => void;
   onSubmit: (data: NewTransaction) => void | Promise<void>;
   onDelete?: (id: string) => void | Promise<void>;
   onClose: () => void;
@@ -52,15 +54,17 @@ export default function TransactionForm({
   const [submitting, setSubmitting] = useState(false);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryGroup, setNewCategoryGroup] = useState<CategoryGroup>("other");
 
   const categories = type === "expense" ? [...categoriesFor(type), ...customCategories] : categoriesFor(type);
 
   function confirmNewCategory() {
     const name = newCategoryName.trim();
     if (!name) return;
-    if (!categories.includes(name)) onAddCategory(name);
+    if (!categories.includes(name)) onAddCategory(name, newCategoryGroup);
     setCategory(name);
     setNewCategoryName("");
+    setNewCategoryGroup("other");
     setAddingCategory(false);
   }
 
@@ -166,22 +170,39 @@ export default function TransactionForm({
             )}
           </div>
           {addingCategory && (
-            <div className="mt-2 flex gap-2">
-              <input
-                type="text"
-                autoFocus
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder={t("money.newCategoryPlaceholder")}
-                className={inputClass}
-              />
-              <button
-                type="button"
-                onClick={confirmNewCategory}
-                className="shrink-0 rounded-xl bg-ink px-4 text-xs font-bold text-surface"
-              >
-                {t("app.add")}
-              </button>
+            <div className="mt-2">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  autoFocus
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder={t("money.newCategoryPlaceholder")}
+                  className={inputClass}
+                />
+                <button
+                  type="button"
+                  onClick={confirmNewCategory}
+                  className="shrink-0 rounded-xl bg-ink px-4 text-xs font-bold text-surface"
+                >
+                  {t("app.add")}
+                </button>
+              </div>
+              <p className="mb-1.5 mt-2.5 text-[11px] text-ink-muted">{t("money.newCategoryGroupHint")}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {CATEGORY_GROUPS.map((group) => (
+                  <button
+                    key={group}
+                    type="button"
+                    onClick={() => setNewCategoryGroup(group)}
+                    className={`rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
+                      newCategoryGroup === group ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+                    }`}
+                  >
+                    {t(`money.categoryGroup.${group}`)}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
         </div>

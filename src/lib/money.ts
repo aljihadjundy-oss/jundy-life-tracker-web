@@ -1,9 +1,11 @@
 import { addMonths, currentMonthKey } from "./format";
+import { categoryGroupOf } from "@/types/finance";
 import type {
   Account,
   Allocation,
   Budget,
   BudgetStatus,
+  CategoryGroup,
   Debt,
   Goal,
   Transaction,
@@ -239,6 +241,29 @@ export function spendByCategory(transactions: Transaction[], month: string): Cat
   }
   return [...totals.entries()]
     .map(([category, amount]) => ({ category, amount, ratio: grand > 0 ? amount / grand : 0 }))
+    .sort((a, b) => b.amount - a.amount);
+}
+
+export type GroupSpend = { group: CategoryGroup; amount: number; ratio: number };
+
+/** Same rollup as spendByCategory, one level up — by category group instead
+ * of the raw category, so "essential vs lifestyle vs debt/savings" reads at
+ * a glance instead of scanning a dozen category rows. */
+export function spendByGroup(
+  transactions: Transaction[],
+  month: string,
+  customGroups: Record<string, CategoryGroup>
+): GroupSpend[] {
+  const totals = new Map<CategoryGroup, number>();
+  let grand = 0;
+  for (const tx of transactions) {
+    if (!isSpending(tx) || monthOf(tx.date) !== month) continue;
+    const group = categoryGroupOf(tx.category, customGroups);
+    totals.set(group, (totals.get(group) ?? 0) + tx.amount);
+    grand += tx.amount;
+  }
+  return [...totals.entries()]
+    .map(([group, amount]) => ({ group, amount, ratio: grand > 0 ? amount / grand : 0 }))
     .sort((a, b) => b.amount - a.amount);
 }
 

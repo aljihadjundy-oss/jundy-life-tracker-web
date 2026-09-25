@@ -15,6 +15,7 @@ import {
   netWorth,
   overdueDebts,
   spendByCategory,
+  spendByGroup,
   totalAssets,
   totalDebt,
   unassignedTransactions,
@@ -380,4 +381,30 @@ test("overdueDebts: hanya debt active dengan dueDate yang sudah lewat", () => {
     "2026-09-15"
   );
   assert.deepEqual(rows.map((r) => r.id), ["d1"]);
+});
+
+// ---------------------------------------------------------------------------
+// spendByGroup
+// ---------------------------------------------------------------------------
+
+test("spendByGroup: rollup pakai grup bawaan, custom category lewat customGroups", () => {
+  const rows = spendByGroup(
+    [
+      tx({ id: "t1", category: "Makan", amount: 100 }), // essential (bawaan)
+      tx({ id: "t2", category: "Hiburan", amount: 60 }), // lifestyle (bawaan)
+      tx({ id: "t3", category: "Skincare", amount: 40 }), // custom -> lifestyle
+      tx({ id: "t4", category: "Misteri", amount: 10 }), // custom tanpa assignment -> other
+      tx({ id: "t5", category: "Gaji", amount: 500, type: "income" }), // income diabaikan
+    ],
+    "2026-09",
+    { Skincare: "lifestyle" }
+  );
+  assert.deepEqual(
+    rows.map((r) => [r.group, r.amount]),
+    [
+      ["essential", 100],
+      ["lifestyle", 100],
+      ["other", 10],
+    ]
+  );
 });

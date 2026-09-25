@@ -85,6 +85,46 @@ export function categoryLabel(category: string, t: (key: string) => string): str
 }
 
 // ---------------------------------------------------------------------------
+// Category groups — a rollup layer above the flat category list, so
+// spending can be read as "essential vs lifestyle vs debt/savings" without
+// making every transaction entry pick a group by hand.
+// ---------------------------------------------------------------------------
+
+export type CategoryGroup = "essential" | "lifestyle" | "debtSavings" | "other";
+
+export const CATEGORY_GROUPS: CategoryGroup[] = ["essential", "lifestyle", "debtSavings", "other"];
+
+/** Every built-in expense category's group — fixed, not user-editable, same
+ * reasoning as EXPENSE_CATEGORIES itself being a canonical list. */
+const BUILTIN_CATEGORY_GROUPS: Record<string, CategoryGroup> = {
+  Makan: "essential",
+  Transport: "essential",
+  "Kos / kontrakan": "essential",
+  Belanja: "lifestyle",
+  Tagihan: "essential",
+  Hiburan: "lifestyle",
+  Kesehatan: "essential",
+  Pendidikan: "essential",
+  Hutang: "debtSavings",
+  Tabungan: "debtSavings",
+  Rokok: "lifestyle",
+  Lainnya: "other",
+};
+
+/**
+ * Which group a category rolls up into. Built-ins are fixed; a custom
+ * category defaults to "other" until the user assigns one (done once, when
+ * they create it — see TransactionForm's "+ Kategori baru" flow), not
+ * re-asked on every transaction.
+ */
+export function categoryGroupOf(
+  category: string,
+  customGroups: Record<string, CategoryGroup>
+): CategoryGroup {
+  return BUILTIN_CATEGORY_GROUPS[category] ?? customGroups[category] ?? "other";
+}
+
+// ---------------------------------------------------------------------------
 // Accounts (template's "Assets")
 // ---------------------------------------------------------------------------
 
@@ -204,6 +244,9 @@ export type FinanceSettings = {
    * changing what those keys mean.
    */
   customCategories: string[];
+  /** Group assignment for custom categories only — built-ins are fixed
+   * (see BUILTIN_CATEGORY_GROUPS), keyed by the custom category's name. */
+  categoryGroups: Record<string, CategoryGroup>;
 };
 
 /** The template's own split, used until the user edits it. */
@@ -220,6 +263,7 @@ export const DEFAULT_FINANCE_SETTINGS: FinanceSettings = {
   allocationBase: 0,
   allocations: DEFAULT_ALLOCATIONS,
   customCategories: [],
+  categoryGroups: {},
 };
 
 // ---------------------------------------------------------------------------

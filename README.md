@@ -136,9 +136,12 @@ users/{uid}/recurringTransactions/{id} → { name, type (income|expense), amount
                                      bulan dengan satu tap lewat logRecurringTransaction, bukan
                                      otomatis nulis transaksi baru sendiri)
 users/{uid}/settings/finance      → { monthlyBudget, allocationBase, allocations: [...],
-                                      customCategories: [...] }
+                                      customCategories: [...], categoryGroups: {...} }
                                     (customCategories = kategori expense yang diketik user
-                                     sendiri di luar EXPENSE_CATEGORIES bawaan)
+                                     sendiri di luar EXPENSE_CATEGORIES bawaan. categoryGroups
+                                     = grup rollup {namaKategoriCustom: essential|lifestyle|
+                                     debtSavings|other}, diisi sekali pas kategori dibuat —
+                                     kategori bawaan grupnya fixed di kode, gak disimpen di sini)
 users/{uid}/tasks/{id}            → { title, note, dueDate, startTime, durationMinutes,
                                       reminderMinutes, status, category, owner, unit, link,
                                       source, createdAt, completedAt, notifiedFor }

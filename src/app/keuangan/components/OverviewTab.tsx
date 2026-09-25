@@ -1,7 +1,16 @@
 "use client";
 
 import { useMemo } from "react";
-import { categoryLabel, type Account, type Debt, type FinanceSettings, type Goal, type Transaction, type Budget } from "@/types/finance";
+import {
+  categoryLabel,
+  type Account,
+  type CategoryGroup,
+  type Debt,
+  type FinanceSettings,
+  type Goal,
+  type Transaction,
+  type Budget,
+} from "@/types/finance";
 import {
   allocationLines,
   allocationTotal,
@@ -14,9 +23,17 @@ import {
   netWorth,
   overBudget,
   spendByCategory,
+  spendByGroup,
 } from "@/lib/money";
 import { currentMonthKey, formatCurrency, formatDate, formatMonth } from "@/lib/format";
 import { useT } from "@/lib/i18n";
+
+const GROUP_TONE: Record<CategoryGroup, string> = {
+  essential: "bg-accent-finance",
+  lifestyle: "bg-amber-500",
+  debtSavings: "bg-red-500",
+  other: "bg-border",
+};
 
 /**
  * The dashboard the template describes but never wires up. In Notion, Overview,
@@ -53,6 +70,10 @@ export default function OverviewTab({
   const warnings = useMemo(() => overBudget(monthBudgetLines), [monthBudgetLines]);
   const topGoals = useMemo(() => goalsByProgress(goals).slice(0, 3), [goals]);
   const categories = useMemo(() => spendByCategory(transactions, month).slice(0, 5), [transactions, month]);
+  const groups = useMemo(
+    () => spendByGroup(transactions, month, settings.categoryGroups),
+    [transactions, month, settings.categoryGroups]
+  );
   const split = useMemo(() => needWantSplit(transactions, month), [transactions, month]);
   const installments = useMemo(() => monthlyInstallments(debts), [debts]);
   const trend = useMemo(() => monthlyTrend(transactions, 6), [transactions]);
@@ -225,6 +246,26 @@ export default function OverviewTab({
               </div>
             ))}
           </div>
+
+          {groups.length > 0 && (
+            <div className="mt-4 border-t border-border/60 pt-3">
+              <p className="mb-2 text-[11px] font-semibold text-ink-muted">{t("money.byGroup")}</p>
+              <div className="flex h-2.5 overflow-hidden rounded-full bg-surface-raised">
+                {groups.map((g) => (
+                  <div key={g.group} className={GROUP_TONE[g.group]} style={{ width: `${g.ratio * 100}%` }} />
+                ))}
+              </div>
+              <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-ink-muted">
+                {groups.map((g) => (
+                  <Legend
+                    key={g.group}
+                    className={GROUP_TONE[g.group]}
+                    label={`${t(`money.categoryGroup.${g.group}`)} ${formatCurrency(g.amount)}`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
 
           {split.total > 0 && (
             <div className="mt-4 border-t border-border/60 pt-3">

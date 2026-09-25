@@ -126,6 +126,7 @@ export function subscribeFinanceSettings(uid: string, onData: (settings: Finance
       allocationBase: data.allocationBase ?? 0,
       allocations: data.allocations ?? DEFAULT_FINANCE_SETTINGS.allocations,
       customCategories: data.customCategories ?? [],
+      categoryGroups: data.categoryGroups ?? {},
     });
   });
 }

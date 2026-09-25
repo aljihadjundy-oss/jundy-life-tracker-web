@@ -38,9 +38,12 @@ import {
   updateGoal,
 } from "@/lib/finance";
 import {
+  CATEGORY_GROUPS,
   DEFAULT_FINANCE_SETTINGS,
+  categoryGroupOf,
   type Account,
   type Budget,
+  type CategoryGroup,
   type Debt,
   type FinanceSettings,
   type Goal,
@@ -122,6 +125,7 @@ function KeuanganContent() {
   const [tab, setTab] = useState<Tab>("overview");
   const [month, setMonth] = useState(currentMonthKey());
   const [editing, setEditing] = useState<Editing>(null);
+  const [groupFilter, setGroupFilter] = useState<CategoryGroup | "all">("all");
   const selection = useSelection();
 
   useEffect(() => {
@@ -160,6 +164,18 @@ function KeuanganContent() {
   );
   const goalRows = useMemo(() => goalsByProgress(goals), [goals]);
   const orphans = useMemo(() => unassignedTransactions(transactions), [transactions]);
+  // Groups only really mean anything for expenses — filtering by group also
+  // hiding every income/transfer row would be confusing, so those stay put
+  // and only "all" shows them.
+  const visibleTransactions = useMemo(
+    () =>
+      groupFilter === "all"
+        ? transactions
+        : transactions.filter(
+            (tx) => tx.type === "expense" && categoryGroupOf(tx.category, settings.categoryGroups) === groupFilter
+          ),
+    [transactions, groupFilter, settings.categoryGroups]
+  );
   const overdue = useMemo(() => overdueDebts(debts, todayISO()), [debts]);
   const goalTotals = useMemo(
     () => ({
@@ -197,10 +213,15 @@ function KeuanganContent() {
     awardXpInBackground(uid, "transaction");
   }
 
-  function handleAddCategory(name: string) {
+  function handleAddCategory(name: string, group: CategoryGroup) {
     if (!uid) return;
     if (settings.customCategories.includes(name)) return;
-    save((u) => saveFinanceSettings(u, { customCategories: [...settings.customCategories, name] }));
+    save((u) =>
+      saveFinanceSettings(u, {
+        customCategories: [...settings.customCategories, name],
+        categoryGroups: { ...settings.categoryGroups, [name]: group },
+      })
+    );
   }
 
   function handleContributeGoal(goal: Goal, amount: number, accountId: string) {
@@ -225,13 +246,13 @@ function KeuanganContent() {
   }
 
   const visibleIds = useMemo(() => {
-    if (tab === "transactions") return transactions.map((x) => x.id);
+    if (tab === "transactions") return visibleTransactions.map((x) => x.id);
     if (tab === "budgets") return monthBudgets.map((x) => x.id);
     if (tab === "accounts") return accounts.map((x) => x.id);
     if (tab === "debts") return debts.map((x) => x.id);
     if (tab === "goals") return goals.map((x) => x.id);
     return [];
-  }, [tab, transactions, monthBudgets, accounts, debts, goals]);
+  }, [tab, visibleTransactions, monthBudgets, accounts, debts, goals]);
 
   function handleBulkDelete(ids: string[]) {
     if (!uid) return;
@@ -408,11 +429,35 @@ function KeuanganContent() {
               />
             )}
 
+            {tab === "transactions" && (
+              <div className="no-scrollbar -mx-5 flex gap-1.5 overflow-x-auto px-5 pb-1">
+                <button
+                  onClick={() => setGroupFilter("all")}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
+                    groupFilter === "all" ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+                  }`}
+                >
+                  {t("money.groupFilterAll")}
+                </button>
+                {CATEGORY_GROUPS.map((group) => (
+                  <button
+                    key={group}
+                    onClick={() => setGroupFilter(group)}
+                    className={`shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold transition ${
+                      groupFilter === group ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
+                    }`}
+                  >
+                    {t(`money.categoryGroup.${group}`)}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {tab === "transactions" &&
-              (transactions.length === 0 ? (
-                <EmptyState>{t("finance.empty")}</EmptyState>
+              (visibleTransactions.length === 0 ? (
+                <EmptyState>{t(groupFilter === "all" ? "finance.empty" : "money.groupFilterEmpty")}</EmptyState>
               ) : (
-                transactions.map((tx) => (
+                visibleTransactions.map((tx) => (
                   <TransactionCard
                     key={tx.id}
                     transaction={tx}
