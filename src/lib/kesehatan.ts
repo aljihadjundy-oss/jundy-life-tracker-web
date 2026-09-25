@@ -74,7 +74,10 @@ export function subscribeHabits(uid: string, onData: (habits: Habit[]) => void) 
     const items = snapshot.docs.map((d) => {
       const data = d.data();
       const createdAt = data.createdAt instanceof Timestamp ? data.createdAt.toMillis() : Date.now();
-      return { id: d.id, name: data.name, createdAt } as Habit;
+      // Old habits from before weekly targets existed default to 7 (every
+      // day), which reproduces exactly the old daily-or-nothing behavior.
+      const targetPerWeek = typeof data.targetPerWeek === "number" ? data.targetPerWeek : 7;
+      return { id: d.id, name: data.name, targetPerWeek, createdAt } as Habit;
     });
     onData(items);
   });
@@ -127,6 +130,8 @@ function toMetrics(date: string, data: Record<string, unknown>): DailyMetrics {
     symptoms: (data.symptoms as string[]) ?? [],
     mealsDone: (data.mealsDone as string[]) ?? [],
     exercise: (data.exercise as ExerciseLog[]) ?? [],
+    weightKg: (data.weightKg as number) ?? 0,
+    note: (data.note as string) ?? "",
   };
 }
 

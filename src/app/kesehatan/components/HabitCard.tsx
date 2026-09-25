@@ -9,6 +9,7 @@ import { useLongPress } from "@/lib/useLongPress";
 export default function HabitCard({
   habit,
   completed,
+  weekCount,
   onToggle,
   onDelete,
   selectMode,
@@ -18,6 +19,8 @@ export default function HabitCard({
 }: {
   habit: Habit;
   completed: boolean;
+  /** Times checked in the trailing 7 days ending on the selected date. */
+  weekCount: number;
   onToggle: (id: string, next: boolean) => void;
   onDelete: (id: string) => void;
   selectMode: boolean;
@@ -55,9 +58,16 @@ export default function HabitCard({
         </button>
       )}
 
-      <p className={`flex-1 truncate text-sm font-semibold ${completed ? "text-ink-muted line-through" : "text-ink"}`}>
-        {habit.name}
-      </p>
+      <div className="min-w-0 flex-1">
+        <p className={`truncate text-sm font-semibold ${completed ? "text-ink-muted line-through" : "text-ink"}`}>
+          {habit.name}
+        </p>
+        {habit.targetPerWeek < 7 && (
+          <p className="mt-0.5 text-[11px] text-ink-muted">
+            {t("health.weekProgress", { done: Math.min(weekCount, habit.targetPerWeek), target: habit.targetPerWeek })}
+          </p>
+        )}
+      </div>
 
       {selectMode ? null : confirming ? (
         <div className="flex gap-2">

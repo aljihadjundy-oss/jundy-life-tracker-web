@@ -45,6 +45,8 @@ import MealsCard from "./components/MealsCard";
 import SleepCard from "./components/SleepCard";
 import EnergyMoodCard from "./components/EnergyMoodCard";
 import SymptomsCard from "./components/SymptomsCard";
+import WeightCard from "./components/WeightCard";
+import NoteCard from "./components/NoteCard";
 import ExerciseCard from "./components/ExerciseCard";
 import ExerciseRoutineForm from "./components/ExerciseRoutineForm";
 import HealthSettingsSheet from "./components/HealthSettingsSheet";
@@ -144,13 +146,36 @@ function KesehatanContent() {
     return map;
   }, [logs]);
 
+  // Counts check-ins in the trailing 7 days ending on `endDate` — the basis
+  // for judging a weekly-target habit "on track" without requiring it be
+  // checked on that exact day, the way a daily habit (targetPerWeek === 7)
+  // still is.
+  const habitWeekCount = useMemo(
+    () => (habitId: string, endDate: string) => {
+      let count = 0;
+      for (let i = 0; i < 7; i++) {
+        const d = addDaysISO(endDate, -i);
+        if (logsByDate.get(d)?.has(habitId)) count++;
+      }
+      return count;
+    },
+    [logsByDate]
+  );
+
+  const isHabitSatisfied = useMemo(
+    () => (habit: Habit, date: string) =>
+      habit.targetPerWeek >= 7
+        ? (logsByDate.get(date)?.has(habit.id) ?? false)
+        : habitWeekCount(habit.id, date) >= habit.targetPerWeek,
+    [logsByDate, habitWeekCount]
+  );
+
   const isDateComplete = useMemo(
     () => (date: string) => {
       if (habits.length === 0) return false;
-      const ids = logsByDate.get(date);
-      return !!ids && habits.every((h) => ids.has(h.id));
+      return habits.every((h) => isHabitSatisfied(h, date));
     },
-    [habits, logsByDate]
+    [habits, isHabitSatisfied]
   );
 
   const completeDates = useMemo(() => {
@@ -184,6 +209,19 @@ function KesehatanContent() {
       }),
     [metricsByDate, today]
   );
+
+  // Most recent logged weight strictly before `selectedDate` — used for the
+  // delta line, e.g. "-0.4 kg dari 12 Sep". Scans metricsList directly rather
+  // than metricsByDate since it needs the single latest match, not a lookup.
+  const previousWeight = useMemo(() => {
+    let best: DailyMetrics | null = null;
+    for (const m of metricsList) {
+      if (m.weightKg > 0 && m.date < selectedDate && (!best || m.date > best.date)) {
+        best = m;
+      }
+    }
+    return best ? { weightKg: best.weightKg, dateLabel: formatDate(best.date) } : null;
+  }, [metricsList, selectedDate]);
 
   const phase =
     tracksCycle && settings.cycleStart ? cycleInfo(effectiveSettings, today).phase : "follicular";
@@ -270,6 +308,14 @@ function KesehatanContent() {
       actualWakeTime,
       sleepHours: nowLogged ? sleepHours(actualBedtime, actualWakeTime) : 0,
     });
+  }
+
+  function handleWeightChange(next: number) {
+    patchActive({ weightKg: next });
+  }
+
+  function handleNoteChange(next: string) {
+    patchActive({ note: next });
   }
 
   function logExercise(entry: ExerciseLog) {
@@ -387,6 +433,7 @@ function KesehatanContent() {
             scheduleBedtime={settings.bedtime}
             onChange={handleSleepLog}
           />
+          <WeightCard weightKg={activeMetrics.weightKg} previous={previousWeight} onChange={handleWeightChange} />
           <SymptomsCard
             mode={bodyMode}
             selected={activeMetrics.symptoms}
@@ -398,6 +445,7 @@ function KesehatanContent() {
               })
             }
           />
+          <NoteCard key={selectedDate} note={activeMetrics.note} onChange={handleNoteChange} />
         </div>
       )}
 
@@ -481,6 +529,7 @@ function KesehatanContent() {
                 key={h.id}
                 habit={h}
                 completed={selectedCompletedIds.has(h.id)}
+                weekCount={habitWeekCount(h.id, selectedDate)}
                 onToggle={handleToggleHabit}
                 onDelete={handleDeleteHabit}
                 selectMode={selection.active}

@@ -1,10 +1,20 @@
 export type Habit = {
   id: string;
   name: string;
+  /**
+   * How many days a week this needs to happen to be "on track" — 7 means
+   * every day. Before this, every habit was treated as daily-or-nothing, so
+   * something genuinely meant to happen 2-3x/week always read as failing.
+   * Old habits without this field default to 7 on read (see subscribeHabits),
+   * which reproduces the exact old behavior.
+   */
+  targetPerWeek: number;
   createdAt: number; // epoch millis
 };
 
 export type NewHabit = Omit<Habit, "id" | "createdAt">;
+
+export const HABIT_FREQUENCY_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
 
 export type HabitLog = {
   habitId: string;
@@ -70,6 +80,10 @@ export type DailyMetrics = {
   /** Names of the scheduled meals already eaten. */
   mealsDone: string[];
   exercise: ExerciseLog[];
+  /** kg, 0 = not logged today. */
+  weightKg: number;
+  /** Free-form text for whatever doesn't fit the structured fields above. */
+  note: string;
 };
 
 export const EMPTY_METRICS = (date: string): DailyMetrics => ({
@@ -84,6 +98,8 @@ export const EMPTY_METRICS = (date: string): DailyMetrics => ({
   symptoms: [],
   mealsDone: [],
   exercise: [],
+  weightKg: 0,
+  note: "",
 });
 
 // ---------------------------------------------------------------------------
@@ -103,6 +119,12 @@ export type Meal = {
   /** Slug used as the identifier in DailyMetrics.mealsDone. */
   id: string;
   time: string; // "HH:mm"
+  /**
+   * User-entered label for a custom meal slot added beyond the 4 defaults.
+   * Absent for the defaults, which get their label from health.meal.<id> —
+   * those ids ("breakfast" etc.) are translation slugs, not display text.
+   */
+  name?: string;
 };
 
 export type ExercisePrefs = {

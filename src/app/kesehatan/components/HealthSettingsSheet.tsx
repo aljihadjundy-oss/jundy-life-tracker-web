@@ -147,10 +147,25 @@ export default function HealthSettingsSheet({
         <Section title={t("health.mealTimes")}>
           <div className="flex flex-col gap-2">
             {draft.meals.map((meal, i) => (
-              <div key={meal.id} className="flex items-center gap-3">
-                <span className="flex-1 text-sm font-semibold text-ink">
-                  {t(`health.meal.${meal.id}`)}
-                </span>
+              <div key={meal.id} className="flex items-center gap-2">
+                {meal.name !== undefined ? (
+                  <input
+                    type="text"
+                    value={meal.name}
+                    onChange={(e) => {
+                      const meals = draft.meals.map((m, j) =>
+                        j === i ? { ...m, name: e.target.value } : m
+                      );
+                      set({ meals });
+                    }}
+                    placeholder={t("health.mealNamePlaceholder")}
+                    className="min-w-0 flex-1 rounded-xl border border-border bg-surface-card px-3 py-2 text-sm font-semibold text-ink outline-none focus:border-ink"
+                  />
+                ) : (
+                  <span className="flex-1 text-sm font-semibold text-ink">
+                    {t(`health.meal.${meal.id}`)}
+                  </span>
+                )}
                 <input
                   type="time"
                   value={meal.time}
@@ -161,11 +176,33 @@ export default function HealthSettingsSheet({
                     );
                     set({ meals });
                   }}
-                  className="rounded-xl border border-border bg-surface-card px-3 py-2 text-sm tabular-nums text-ink outline-none focus:border-ink"
+                  className="shrink-0 rounded-xl border border-border bg-surface-card px-3 py-2 text-sm tabular-nums text-ink outline-none focus:border-ink"
                 />
+                <button
+                  type="button"
+                  onClick={() => set({ meals: draft.meals.filter((_, j) => j !== i) })}
+                  aria-label={t("health.removeMealSlot")}
+                  className="shrink-0 text-ink-muted/70 hover:text-red-500"
+                >
+                  ×
+                </button>
               </div>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={() =>
+              set({
+                meals: [
+                  ...draft.meals,
+                  { id: `custom-${Date.now()}`, name: t("health.newMealDefault"), time: "12:00" },
+                ],
+              })
+            }
+            className="mt-3 text-xs font-bold text-accent-health"
+          >
+            + {t("health.addMealSlot")}
+          </button>
         </Section>
 
         <Section title={t("health.exercisePrefs")}>

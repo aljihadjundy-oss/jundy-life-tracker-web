@@ -131,17 +131,21 @@ users/{uid}/tasks/{id}            → { title, note, dueDate, startTime, duratio
                                       reminderMinutes, status, category, owner, unit, link,
                                       source, createdAt, completedAt, notifiedFor }
 users/{uid}/content/{id}          → { title, platform, postDate, status, note, createdAt }
-users/{uid}/habits/{id}           → { name, createdAt }
+users/{uid}/habits/{id}           → { name, targetPerWeek, createdAt }
+                                    (targetPerWeek: 7 = setiap hari/default, kurang dari itu =
+                                     dianggap "on track" kalau sudah kecapai N kali dalam 7 hari
+                                     terakhir, tidak wajib dicek pas hari itu juga)
 users/{uid}/habitLogs/{date_habitId} → { habitId, date }
 users/{uid}/exerciseRoutines/{id} → { name, minutes, createdAt }
                                     (rutinitas olahraga buatan sendiri user, dicatat lewat
                                      tab Body di Kesehatan — beda dari saran algoritmik)
 users/{uid}/metrics/{date}        → { date, sleepHours, actualBedtime, actualWakeTime,
                                       exerciseMinutes, waterGlasses, energy, mood, symptoms,
-                                      mealsDone, exercise }
+                                      mealsDone, exercise, weightKg, note }
                                     (actualBedtime/actualWakeTime = jam tidur asli malam itu;
                                      beda dari settings/health.bedtime/wakeTime, yang cuma
-                                     jadwal buat notifikasi pengingat)
+                                     jadwal buat notifikasi pengingat. weightKg/note opsional,
+                                     0/"" kalau belum diisi hari itu)
 users/{uid}/journal/{id}          → { title, content, mood, date, hasAudio, audioSeconds,
                                       createdAt, updatedAt }
                                     (audio itself: IndexedDB on the recording device, not synced)

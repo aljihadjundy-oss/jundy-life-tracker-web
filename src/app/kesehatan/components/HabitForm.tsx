@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import type { NewHabit } from "@/types/kesehatan";
+import { useState, type FormEvent } from "react";
+import { HABIT_FREQUENCY_OPTIONS, type NewHabit } from "@/types/kesehatan";
 import { useT } from "@/lib/i18n";
 
 export default function HabitForm({
@@ -12,16 +12,17 @@ export default function HabitForm({
   onClose: () => void;
 }) {
   const [name, setName] = useState("");
+  const [targetPerWeek, setTargetPerWeek] = useState(7);
   const [submitting, setSubmitting] = useState(false);
   const t = useT();
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
 
     setSubmitting(true);
     try {
-      await onSubmit({ name: name.trim() });
+      await onSubmit({ name: name.trim(), targetPerWeek });
       onClose();
     } finally {
       setSubmitting(false);
@@ -49,6 +50,24 @@ export default function HabitForm({
             className="w-full rounded-xl border border-border bg-surface-card px-4 py-3 text-base font-semibold text-ink outline-none focus:border-ink"
           />
         </label>
+
+        <div className="mb-5">
+          <span className="mb-1.5 block text-xs font-medium text-ink-muted">{t("health.habitFrequency")}</span>
+          <div className="flex flex-wrap gap-2">
+            {HABIT_FREQUENCY_OPTIONS.map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setTargetPerWeek(n)}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                  targetPerWeek === n ? "bg-ink text-surface" : "bg-surface-card text-ink-muted"
+                }`}
+              >
+                {n === 7 ? t("health.daily") : t("health.timesPerWeek", { n })}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <button
           type="submit"

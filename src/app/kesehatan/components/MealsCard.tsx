@@ -42,7 +42,9 @@ export default function MealsCard({
                   <path d="M5 13l4 4L19 7" />
                 </svg>
               </span>
-              <span className="flex-1 text-sm font-semibold text-ink">{t(`health.meal.${meal.id}`)}</span>
+              <span className="flex-1 text-sm font-semibold text-ink">
+                {meal.name ?? t(`health.meal.${meal.id}`)}
+              </span>
               <span className="text-xs tabular-nums text-ink-muted">{formatTime(meal.time)}</span>
             </button>
           );
