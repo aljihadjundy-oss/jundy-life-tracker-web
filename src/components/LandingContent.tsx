@@ -4,7 +4,7 @@ import Link from "next/link";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Logo, LogoMark } from "@/components/Logo";
 import { NAV_ITEMS, type IconProps } from "@/components/nav-items";
-import { useT, useLanguage, setLanguage } from "@/lib/i18n";
+import { useT, useLanguage, setLanguage, type Translate } from "@/lib/i18n";
 import { LANGUAGES } from "@/lib/translations";
 import { applySkin, readSkin, SKINS, subscribeSkin, type Skin } from "@/lib/skin";
 import WaitlistForm from "@/components/WaitlistForm";
@@ -210,35 +210,39 @@ export default function LandingContent() {
           aria-hidden
           className="pointer-events-none absolute -right-20 top-32 h-56 w-56 rounded-full bg-accent-branding opacity-15 blur-3xl"
         />
-        <div className="relative mx-auto max-w-3xl px-5 pt-16 pb-14 text-center md:pt-24 md:pb-20">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink-muted">
-            {t("landing.hero.eyebrow")}
-          </p>
-          <h1 className="mt-4 text-4xl font-extrabold leading-[1.08] tracking-tight text-ink md:text-6xl">
-            {t("landing.hero.headline")}
-          </h1>
-          <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-ink-muted md:text-lg">
-            {t("landing.hero.subheadline")}
-          </p>
-          <div className="mt-8 flex flex-col items-center gap-3">
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Link
-                href="/login"
-                className="rounded-2xl bg-ink px-8 py-4 text-base font-bold text-surface shadow-md transition active:scale-95"
-              >
-                {t("landing.hero.cta")}
-              </Link>
-              <a
-                href="#pilar"
-                className="rounded-2xl border border-border px-8 py-4 text-base font-bold text-ink transition hover:border-ink/30 active:scale-95"
-              >
-                {t("landing.hero.ctaSecondary")}
-              </a>
-            </div>
-            <p className="max-w-xs text-xs leading-relaxed text-ink-muted">
-              {t("landing.hero.ctaNote")}
+        <div className="relative mx-auto grid max-w-6xl gap-10 px-5 pt-16 pb-14 md:pt-24 md:pb-20 lg:grid-cols-2 lg:items-center lg:gap-16">
+          <div className="text-center lg:text-left">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-ink-muted">
+              {t("landing.hero.eyebrow")}
             </p>
+            <h1 className="mt-4 text-4xl font-extrabold leading-[1.08] tracking-tight text-ink md:text-6xl">
+              {t("landing.hero.headline")}
+            </h1>
+            <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-ink-muted md:text-lg lg:mx-0">
+              {t("landing.hero.subheadline")}
+            </p>
+            <div className="mt-8 flex flex-col items-center gap-3 lg:items-start">
+              <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                <Link
+                  href="/login"
+                  className="rounded-2xl bg-ink px-8 py-4 text-base font-bold text-surface shadow-md transition active:scale-95"
+                >
+                  {t("landing.hero.cta")}
+                </Link>
+                <a
+                  href="#pilar"
+                  className="rounded-2xl border border-border px-8 py-4 text-base font-bold text-ink transition hover:border-ink/30 active:scale-95"
+                >
+                  {t("landing.hero.ctaSecondary")}
+                </a>
+              </div>
+              <p className="max-w-xs text-xs leading-relaxed text-ink-muted">
+                {t("landing.hero.ctaNote")}
+              </p>
+            </div>
           </div>
+
+          <HeroMockup t={t} />
         </div>
       </section>
 
@@ -429,7 +433,122 @@ export default function LandingContent() {
           </Link>
         </div>
       </footer>
+
+      {/* --- WhatsApp mengambang: satu-satunya kontak nyata yang ada -------- */}
+      <a
+        href="https://wa.me/6281387073047"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-[#25D366] py-3 pl-3 pr-4 text-sm font-bold text-white shadow-lg shadow-[#25D366]/30 transition hover:-translate-y-0.5 active:scale-95"
+      >
+        <WhatsAppIcon className="h-5 w-5" />
+        {t("landing.contact.whatsapp")}
+      </a>
     </div>
+  );
+}
+
+/**
+ * Tiga kartu melayang di sisi kanan hero (desktop saja) — pola yang sama
+ * dengan mockup produk yang biasa dipakai landing page SaaS: bukan
+ * screenshot asli, cuma ilustrasi cara kerja fitur yang memang ada. Setiap
+ * kartu diberi label "Contoh tampilan" secara eksplisit supaya tidak
+ * disalahartikan sebagai data pengguna sungguhan — sama seperti aturan main
+ * di seluruh halaman ini: tidak ada yang dikarang, dan yang ilustratif
+ * ditandai jelas sebagai ilustratif.
+ */
+function HeroMockup({ t }: { t: Translate }) {
+  return (
+    <div className="relative hidden h-[420px] lg:block">
+      <div
+        aria-hidden
+        className="absolute inset-8 -z-10 rounded-[48px] bg-gradient-to-br from-brand-start/20 via-brand-mid/10 to-transparent blur-2xl"
+      />
+
+      {/* Kartu tren saldo — fitur nyata: saldo dihitung otomatis dari transaksi. */}
+      <div className="absolute left-0 top-6 w-[70%] rounded-2xl border border-border bg-surface-card p-5 shadow-xl">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-ink">{t("landing.hero.mockup.trend.title")}</span>
+          <span className="rounded-full bg-accent-finance/10 px-2 py-0.5 text-[10px] font-bold text-accent-finance">
+            {t("landing.hero.mockup.trend.badge")}
+          </span>
+        </div>
+        <svg viewBox="0 0 200 60" className="mt-3 h-14 w-full" preserveAspectRatio="none">
+          <polyline
+            points="0,45 25,38 50,42 75,28 100,32 125,18 150,22 175,10 200,14"
+            fill="none"
+            className="stroke-accent-finance"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <p className="mt-2 text-[10px] text-ink-muted">{t("landing.hero.mockup.caption")}</p>
+      </div>
+
+      {/* Kartu reminder — fitur nyata: reminder terjadwal sebelum jam mulai task. */}
+      <div className="absolute right-0 top-0 w-[62%] rounded-2xl border border-border bg-surface-card p-4 shadow-xl">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-time/10 text-accent-time">
+            <BellIcon className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-ink">{t("landing.hero.mockup.reminder.title")}</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-ink-muted">
+              {t("landing.hero.mockup.reminder.body")}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Kartu privasi — fakta yang sama dengan section Fondasi di bawah, bukan klaim baru. */}
+      <div className="absolute bottom-6 right-4 w-[68%] rounded-2xl border border-border bg-surface-card p-4 shadow-xl">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-health/10 text-accent-health">
+            <ShieldIcon className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-ink">{t("landing.hero.mockup.privacy.title")}</p>
+            <p className="mt-0.5 text-[11px] leading-relaxed text-ink-muted">
+              {t("landing.hero.mockup.privacy.body")}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BellIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
+function ShieldIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M12 2 4 5v6c0 5.25 3.5 9.5 8 11 4.5-1.5 8-5.75 8-11V5z" />
+    </svg>
   );
 }
 
@@ -504,6 +623,14 @@ function BoltIcon({ className }: { className?: string }) {
       className={className}
     >
       <path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z" />
+    </svg>
+  );
+}
+
+function WhatsAppIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.33 4.96L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.11.82.83-3.04-.2-.31a8.22 8.22 0 0 1-1.26-4.38c0-4.55 3.7-8.25 8.25-8.25 2.2 0 4.27.86 5.83 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.55-3.7 8.24-8.25 8.24Zm4.52-6.17c-.25-.12-1.47-.72-1.7-.81-.23-.08-.39-.12-.56.13-.17.24-.64.8-.78.97-.14.16-.29.18-.53.06-.25-.12-1.04-.38-1.99-1.22-.73-.65-1.23-1.46-1.37-1.7-.14-.25-.02-.38.11-.5.11-.11.25-.29.37-.43.12-.15.16-.25.24-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.35-.77-1.85-.2-.48-.41-.42-.56-.42-.14-.01-.31-.01-.48-.01a.92.92 0 0 0-.67.31c-.23.25-.87.85-.87 2.08s.89 2.41 1.02 2.58c.12.16 1.75 2.67 4.24 3.75.59.26 1.05.41 1.41.52.59.19 1.13.16 1.55.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.14-1.18-.06-.11-.23-.17-.47-.29Z" />
     </svg>
   );
 }
