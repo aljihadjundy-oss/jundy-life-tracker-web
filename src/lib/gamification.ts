@@ -22,6 +22,10 @@ const COUNTER_BY_ACTION: Record<GameAction, keyof GameCounters> = {
   habit: "habitsChecked",
   journal: "journalEntries",
   post: "postsPublished",
+  water: "waterLogged",
+  meal: "mealsLogged",
+  sleep: "sleepLogged",
+  exercise: "exerciseLogged",
 };
 
 function statsRef(uid: string) {

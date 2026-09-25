@@ -139,6 +139,24 @@ export const PREGNANCY_SYMPTOMS = [
   "babyKicks",
 ];
 
+/**
+ * For body modes without a cycle or pregnancy to key off ("none",
+ * "breastfeeding") — mood/energy/symptom tracking used to be gated behind
+ * `bodyMode === "cycle"` entirely, which meant anyone not tracking a cycle
+ * (most men, and women who opt out of it) had no way to log how they felt at
+ * all. Reuses existing symptom slugs so no new translation keys are needed.
+ */
+export const GENERAL_SYMPTOMS = [
+  "headache",
+  "tired",
+  "lowMood",
+  "bloating",
+  "nausea",
+  "backPain",
+  "insomnia",
+  "acne",
+];
+
 export const DEFAULT_HEALTH_SETTINGS: HealthSettings = {
   bodyMode: "none",
   bodyModeSet: false,

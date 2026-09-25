@@ -3,14 +3,32 @@ export type GameAction =
   | "task"
   | "habit"
   | "journal"
-  | "post";
+  | "post"
+  | "water"
+  | "meal"
+  | "sleep"
+  | "exercise";
 
+/**
+ * Every pillar should give a user who only enables that one pillar the same
+ * shot at a daily goal as someone running all five — before this, Kesehatan's
+ * only XP source was the generic habit checklist, so someone diligently
+ * logging water/meals/sleep/exercise (its actual daily-use data) earned
+ * nothing for it while every other pillar's normal usage paid XP. Water and
+ * meals are capped at once per real event (see awardXp guards in
+ * lib/gamification.ts) so they sit at the low end near `transaction`; sleep
+ * and exercise are once-per-session like `habit`.
+ */
 export const XP_REWARDS: Record<GameAction, number> = {
   transaction: 5,
   task: 15,
   habit: 10,
   journal: 20,
   post: 25,
+  water: 5,
+  meal: 5,
+  sleep: 10,
+  exercise: 10,
 };
 
 export type GameCounters = {
@@ -19,6 +37,10 @@ export type GameCounters = {
   habitsChecked: number;
   journalEntries: number;
   postsPublished: number;
+  waterLogged: number;
+  mealsLogged: number;
+  sleepLogged: number;
+  exerciseLogged: number;
 };
 
 export type GameStats = {
@@ -40,6 +62,10 @@ export const EMPTY_STATS: GameStats = {
     habitsChecked: 0,
     journalEntries: 0,
     postsPublished: 0,
+    waterLogged: 0,
+    mealsLogged: 0,
+    sleepLogged: 0,
+    exerciseLogged: 0,
   },
 };
 

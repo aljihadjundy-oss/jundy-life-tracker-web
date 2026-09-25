@@ -1,6 +1,6 @@
 "use client";
 
-import { CYCLE_SYMPTOMS, PREGNANCY_SYMPTOMS, type BodyMode } from "@/types/kesehatan";
+import { CYCLE_SYMPTOMS, GENERAL_SYMPTOMS, PREGNANCY_SYMPTOMS, type BodyMode } from "@/types/kesehatan";
 import { useT } from "@/lib/i18n";
 
 export default function SymptomsCard({
@@ -13,7 +13,8 @@ export default function SymptomsCard({
   onToggle: (symptom: string) => void;
 }) {
   const t = useT();
-  const list = mode === "pregnant" ? PREGNANCY_SYMPTOMS : CYCLE_SYMPTOMS;
+  const list =
+    mode === "pregnant" ? PREGNANCY_SYMPTOMS : mode === "cycle" ? CYCLE_SYMPTOMS : GENERAL_SYMPTOMS;
 
   return (
     <div className="mx-5 rounded-2xl bg-surface-card p-4 ring-1 ring-border/60">

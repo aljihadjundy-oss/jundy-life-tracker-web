@@ -212,11 +212,43 @@ function KesehatanContent() {
     reportFailure(saveHealthSettings(user.uid, patch), t("notify.saveFailed"));
   }
 
+  // Guarded to once per real event per day — otherwise tapping the water
+  // stepper or re-toggling a meal would mint XP on every click instead of
+  // rewarding the first time that thing actually happened today.
+  function handleWaterChange(next: number) {
+    if (user && todayMetrics.waterGlasses === 0 && next > 0) {
+      awardXpInBackground(user.uid, "water");
+    }
+    patchToday({ waterGlasses: next });
+  }
+
+  function handleToggleMeal(id: string) {
+    const alreadyDone = todayMetrics.mealsDone.includes(id);
+    patchToday({
+      mealsDone: alreadyDone
+        ? todayMetrics.mealsDone.filter((x) => x !== id)
+        : [...todayMetrics.mealsDone, id],
+    });
+    if (!alreadyDone && user) awardXpInBackground(user.uid, "meal");
+  }
+
+  function handleSleepChange(patch: { bedtime?: string; wakeTime?: string }) {
+    const bedtime = patch.bedtime ?? settings.bedtime;
+    const wakeTime = patch.wakeTime ?? settings.wakeTime;
+    void handleSaveSettings(patch);
+    const hours = sleepHours(bedtime, wakeTime);
+    if (user && todayMetrics.sleepHours === 0 && hours > 0) {
+      awardXpInBackground(user.uid, "sleep");
+    }
+    patchToday({ sleepHours: hours });
+  }
+
   function logExercise(entry: ExerciseLog) {
     patchToday({
       exercise: [...todayMetrics.exercise, entry],
       exerciseMinutes: todayMetrics.exerciseMinutes + entry.minutes,
     });
+    if (user) awardXpInBackground(user.uid, "exercise");
   }
 
   return (
@@ -252,56 +284,31 @@ function KesehatanContent() {
       {tab === "today" && (
         <div className="mt-4 flex flex-col gap-4 pb-6">
           <HealthSummaryCard streak={streak} doneToday={doneToday} totalHabits={habits.length} />
-          {tracksCycle && (
-            <EnergyMoodCard
-              energy={todayMetrics.energy}
-              mood={todayMetrics.mood}
-              week={energyWeek}
-              onEnergy={(energy) => patchToday({ energy })}
-              onMood={(mood) => patchToday({ mood })}
-            />
-          )}
-          <WaterCard
-            glasses={todayMetrics.waterGlasses}
-            target={target}
-            onChange={(waterGlasses) => patchToday({ waterGlasses })}
+          {/* Mood/energy/gejala dulu cuma muncul buat yang nge-track siklus —
+              padahal itu metrik kesehatan universal. Sekarang berlaku buat
+              semua body mode; SymptomsCard sendiri yang pilih daftar gejala
+              yang relevan (siklus/hamil/umum) lewat prop `mode`. */}
+          <EnergyMoodCard
+            energy={todayMetrics.energy}
+            mood={todayMetrics.mood}
+            week={energyWeek}
+            onEnergy={(energy) => patchToday({ energy })}
+            onMood={(mood) => patchToday({ mood })}
           />
-          <MealsCard
-            meals={settings.meals}
-            done={todayMetrics.mealsDone}
-            onToggle={(id) =>
+          <WaterCard glasses={todayMetrics.waterGlasses} target={target} onChange={handleWaterChange} />
+          <MealsCard meals={settings.meals} done={todayMetrics.mealsDone} onToggle={handleToggleMeal} />
+          <SleepCard bedtime={settings.bedtime} wakeTime={settings.wakeTime} onChange={handleSleepChange} />
+          <SymptomsCard
+            mode={bodyMode}
+            selected={todayMetrics.symptoms}
+            onToggle={(symptom) =>
               patchToday({
-                mealsDone: todayMetrics.mealsDone.includes(id)
-                  ? todayMetrics.mealsDone.filter((x) => x !== id)
-                  : [...todayMetrics.mealsDone, id],
+                symptoms: todayMetrics.symptoms.includes(symptom)
+                  ? todayMetrics.symptoms.filter((x) => x !== symptom)
+                  : [...todayMetrics.symptoms, symptom],
               })
             }
           />
-          <SleepCard
-            bedtime={settings.bedtime}
-            wakeTime={settings.wakeTime}
-            onChange={(patch) => {
-              const bedtime = patch.bedtime ?? settings.bedtime;
-              const wakeTime = patch.wakeTime ?? settings.wakeTime;
-              void handleSaveSettings(patch);
-              // Keep the schedule (which drives the reminder) and the day's
-              // actual hours in step, so it is only ever entered once.
-              patchToday({ sleepHours: sleepHours(bedtime, wakeTime) });
-            }}
-          />
-          {tracksCycle && (
-            <SymptomsCard
-              mode={bodyMode}
-              selected={todayMetrics.symptoms}
-              onToggle={(symptom) =>
-                patchToday({
-                  symptoms: todayMetrics.symptoms.includes(symptom)
-                    ? todayMetrics.symptoms.filter((x) => x !== symptom)
-                    : [...todayMetrics.symptoms, symptom],
-                })
-              }
-            />
-          )}
         </div>
       )}
 
@@ -336,12 +343,7 @@ function KesehatanContent() {
           </div>
 
           <div className="mt-1">
-            <DaySummaryCard
-              metrics={selectedMetrics}
-              settings={effectiveSettings}
-              waterTarget={target}
-              showWellbeing={tracksCycle}
-            />
+            <DaySummaryCard metrics={selectedMetrics} settings={effectiveSettings} waterTarget={target} />
           </div>
 
           <div className="mt-5 flex items-center justify-between px-5">

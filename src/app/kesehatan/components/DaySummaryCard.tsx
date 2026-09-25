@@ -13,13 +13,10 @@ export default function DaySummaryCard({
   metrics,
   settings,
   waterTarget,
-  showWellbeing,
 }: {
   metrics: DailyMetrics | null;
   settings: HealthSettings;
   waterTarget: number;
-  /** Mood, energy and symptoms only apply when cycle tracking is on. */
-  showWellbeing: boolean;
 }) {
   const t = useT();
 
@@ -65,7 +62,7 @@ export default function DaySummaryCard({
         ))}
       </div>
 
-      {showWellbeing && metrics && (metrics.energy > 0 || metrics.mood || metrics.symptoms.length > 0) && (
+      {metrics && (metrics.energy > 0 || metrics.mood || metrics.symptoms.length > 0) && (
         <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-border/60 pt-3">
           {metrics.energy > 0 && (
             <span className="rounded-full bg-brand-start/15 px-2 py-0.5 text-[10px] font-bold text-brand-start">
