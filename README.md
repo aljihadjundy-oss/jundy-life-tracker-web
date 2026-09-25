@@ -133,8 +133,12 @@ users/{uid}/tasks/{id}            → { title, note, dueDate, startTime, duratio
 users/{uid}/content/{id}          → { title, platform, postDate, status, note, createdAt }
 users/{uid}/habits/{id}           → { name, createdAt }
 users/{uid}/habitLogs/{date_habitId} → { habitId, date }
-users/{uid}/metrics/{date}        → { date, sleepHours, exerciseMinutes, waterGlasses,
-                                      energy, mood, symptoms, mealsDone, exercise }
+users/{uid}/metrics/{date}        → { date, sleepHours, actualBedtime, actualWakeTime,
+                                      exerciseMinutes, waterGlasses, energy, mood, symptoms,
+                                      mealsDone, exercise }
+                                    (actualBedtime/actualWakeTime = jam tidur asli malam itu;
+                                     beda dari settings/health.bedtime/wakeTime, yang cuma
+                                     jadwal buat notifikasi pengingat)
 users/{uid}/journal/{id}          → { title, content, mood, date, hasAudio, audioSeconds,
                                       createdAt, updatedAt }
                                     (audio itself: IndexedDB on the recording device, not synced)

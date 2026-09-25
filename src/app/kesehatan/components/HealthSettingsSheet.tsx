@@ -108,6 +108,33 @@ export default function HealthSettingsSheet({
           </Section>
         )}
 
+        <Section title={t("health.sleepSchedule")} hint={t("health.sleepScheduleHint")}>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-medium text-ink-muted">
+                {t("health.bedtime")}
+              </span>
+              <input
+                type="time"
+                value={draft.bedtime}
+                onChange={(e) => e.target.value && set({ bedtime: e.target.value })}
+                className="w-full rounded-xl border border-border bg-surface-card px-3 py-2.5 text-sm tabular-nums text-ink outline-none focus:border-ink"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-medium text-ink-muted">
+                {t("health.wakeTime")}
+              </span>
+              <input
+                type="time"
+                value={draft.wakeTime}
+                onChange={(e) => e.target.value && set({ wakeTime: e.target.value })}
+                className="w-full rounded-xl border border-border bg-surface-card px-3 py-2.5 text-sm tabular-nums text-ink outline-none focus:border-ink"
+              />
+            </label>
+          </div>
+        </Section>
+
         <Section title={t("health.waterTarget")} hint={t("health.waterTargetHint")}>
           <Chips
             options={WATER_TARGET_OPTIONS}

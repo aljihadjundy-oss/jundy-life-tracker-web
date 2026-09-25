@@ -24,7 +24,22 @@ export type ExerciseLog = {
  */
 export type DailyMetrics = {
   date: string; // ISO date (yyyy-mm-dd)
+  /**
+   * Derived from actualBedtime/actualWakeTime once both are logged; 0 when
+   * they aren't. Kept as its own field (rather than computed on every read)
+   * so old documents from before actual sleep logging existed keep rendering
+   * their one-time schedule-derived value until the user logs a real night.
+   */
   sleepHours: number;
+  /**
+   * What time this specific night's sleep actually started/ended, "" when
+   * not logged yet. Distinct from HealthSettings.bedtime/wakeTime, which is
+   * only the recurring target schedule the bedtime reminder is based on —
+   * conflating the two meant "sleep hours" was really just restating the
+   * schedule, never what actually happened.
+   */
+  actualBedtime: string;
+  actualWakeTime: string;
   exerciseMinutes: number;
   waterGlasses: number;
   /** 0 = not logged today, otherwise 1–5. */
@@ -41,6 +56,8 @@ export type DailyMetrics = {
 export const EMPTY_METRICS = (date: string): DailyMetrics => ({
   date,
   sleepHours: 0,
+  actualBedtime: "",
+  actualWakeTime: "",
   exerciseMinutes: 0,
   waterGlasses: 0,
   energy: 0,

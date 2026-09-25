@@ -232,15 +232,19 @@ function KesehatanContent() {
     if (!alreadyDone && user) awardXpInBackground(user.uid, "meal");
   }
 
-  function handleSleepChange(patch: { bedtime?: string; wakeTime?: string }) {
-    const bedtime = patch.bedtime ?? settings.bedtime;
-    const wakeTime = patch.wakeTime ?? settings.wakeTime;
-    void handleSaveSettings(patch);
-    const hours = sleepHours(bedtime, wakeTime);
-    if (user && todayMetrics.sleepHours === 0 && hours > 0) {
+  function handleSleepLog(patch: { actualBedtime?: string; actualWakeTime?: string }) {
+    const actualBedtime = patch.actualBedtime ?? todayMetrics.actualBedtime;
+    const actualWakeTime = patch.actualWakeTime ?? todayMetrics.actualWakeTime;
+    const wasLogged = Boolean(todayMetrics.actualBedtime && todayMetrics.actualWakeTime);
+    const nowLogged = Boolean(actualBedtime && actualWakeTime);
+    if (user && !wasLogged && nowLogged) {
       awardXpInBackground(user.uid, "sleep");
     }
-    patchToday({ sleepHours: hours });
+    patchToday({
+      actualBedtime,
+      actualWakeTime,
+      sleepHours: nowLogged ? sleepHours(actualBedtime, actualWakeTime) : 0,
+    });
   }
 
   function logExercise(entry: ExerciseLog) {
@@ -297,7 +301,12 @@ function KesehatanContent() {
           />
           <WaterCard glasses={todayMetrics.waterGlasses} target={target} onChange={handleWaterChange} />
           <MealsCard meals={settings.meals} done={todayMetrics.mealsDone} onToggle={handleToggleMeal} />
-          <SleepCard bedtime={settings.bedtime} wakeTime={settings.wakeTime} onChange={handleSleepChange} />
+          <SleepCard
+            actualBedtime={todayMetrics.actualBedtime}
+            actualWakeTime={todayMetrics.actualWakeTime}
+            scheduleBedtime={settings.bedtime}
+            onChange={handleSleepLog}
+          />
           <SymptomsCard
             mode={bodyMode}
             selected={todayMetrics.symptoms}

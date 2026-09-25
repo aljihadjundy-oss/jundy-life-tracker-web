@@ -89,6 +89,8 @@ function toMetrics(date: string, data: Record<string, unknown>): DailyMetrics {
   return {
     ...EMPTY_METRICS(date),
     sleepHours: (data.sleepHours as number) ?? 0,
+    actualBedtime: (data.actualBedtime as string) ?? "",
+    actualWakeTime: (data.actualWakeTime as string) ?? "",
     exerciseMinutes: (data.exerciseMinutes as number) ?? 0,
     waterGlasses: (data.waterGlasses as number) ?? 0,
     energy: (data.energy as number) ?? 0,
