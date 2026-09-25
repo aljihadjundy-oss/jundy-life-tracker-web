@@ -19,9 +19,39 @@ function daysBetween(fromISO: string, toISO: string) {
   return Math.round((to - from) / 86400000);
 }
 
+/**
+ * Real average cycle length from the user's own logged period starts
+ * (cycleStart plus every earlier value in periodStartHistory), so predictions
+ * improve as more real cycles get recorded instead of staying pinned to
+ * whatever guess was picked in Settings. Returns null before there's at
+ * least one real gap to measure — the caller falls back to the manual
+ * setting until then. A gap outside a plausible cycle range (a skipped log,
+ * a typo'd date) is dropped rather than averaged in.
+ */
+export function learnedCycleLength(settings: HealthSettings): number | null {
+  const starts = settings.cycleStart
+    ? [...settings.periodStartHistory, settings.cycleStart]
+    : settings.periodStartHistory;
+  if (starts.length < 2) return null;
+  const sorted = [...starts].sort();
+  const gaps: number[] = [];
+  for (let i = 1; i < sorted.length; i++) {
+    const gap = daysBetween(sorted[i - 1], sorted[i]);
+    if (gap >= 15 && gap <= 60) gaps.push(gap);
+  }
+  if (gaps.length === 0) return null;
+  return Math.round(gaps.reduce((sum, g) => sum + g, 0) / gaps.length);
+}
+
+/** cycleLength to actually predict off — learned from real data when there's
+ * enough of it, the manual Settings value otherwise. */
+export function effectiveCycleLength(settings: HealthSettings): number {
+  return Math.max(15, learnedCycleLength(settings) ?? settings.cycleLength);
+}
+
 /** Cycle day and phase for `date`. Mirrors Rima's useCycle. */
 export function cycleInfo(settings: HealthSettings, date: string): CycleInfo {
-  const length = Math.max(15, settings.cycleLength);
+  const length = effectiveCycleLength(settings);
   let day = (daysBetween(settings.cycleStart, date) % length) + 1;
   if (day <= 0) day += length;
 
@@ -41,7 +71,7 @@ export type DayMark = "period" | "fertile" | null;
 /** How a calendar cell should be shaded. */
 export function markForDate(settings: HealthSettings, date: string): DayMark {
   if (!settings.cycleStart) return null;
-  const length = Math.max(15, settings.cycleLength);
+  const length = effectiveCycleLength(settings);
   let day = (daysBetween(settings.cycleStart, date) % length) + 1;
   if (day <= 0) day += length;
   const ovulation = length - 14;

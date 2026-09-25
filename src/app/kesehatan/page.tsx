@@ -453,7 +453,16 @@ function KesehatanContent() {
         <div className="mt-4 flex flex-col gap-4 pb-6">
           <BodyModeCard
             settings={effectiveSettings}
-            onPeriodStartedToday={() => void handleSaveSettings({ cycleStart: today })}
+            onPeriodStartedToday={() => {
+              // Bank the outgoing cycleStart into history before it's
+              // overwritten — that history is what the length prediction
+              // learns from (see effectiveCycleLength in lib/cycle.ts).
+              const history =
+                settings.cycleStart && settings.cycleStart !== today
+                  ? [...settings.periodStartHistory, settings.cycleStart].slice(-12)
+                  : settings.periodStartHistory;
+              void handleSaveSettings({ cycleStart: today, periodStartHistory: history });
+            }}
             onOpenSettings={() => setShowSettings(true)}
           />
           <ExerciseCard

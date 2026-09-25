@@ -150,8 +150,14 @@ users/{uid}/journal/{id}          → { title, content, mood, date, hasAudio, au
                                       createdAt, updatedAt }
                                     (audio itself: IndexedDB on the recording device, not synced)
 users/{uid}/settings/notifications → { enabled, reminderTime, fcmTokens: [...], bedtimeNotifiedFor }
-users/{uid}/settings/health       → { bodyMode, cycleStart, cycleLength, periodLength, dueDate,
-                                      waterTarget, meals, bedtime, wakeTime, exercisePrefs }
+users/{uid}/settings/health       → { bodyMode, cycleStart, cycleLength, periodLength,
+                                      periodStartHistory, dueDate, waterTarget, meals, bedtime,
+                                      wakeTime, exercisePrefs }
+                                    (periodStartHistory = tiap cycleStart sebelumnya, disimpan
+                                     tiap kali tap "Haid mulai hari ini" — dari situ cycleLength
+                                     dipakainya rata-rata beneran begitu ada ≥2 tanggal, bukan
+                                     angka manual selamanya. cycleLength manual cuma fallback
+                                     sebelum ada histori nyata.)
 users/{uid}/settings/branding     → { youtubeChannel }
 users/{uid}/settings/waktu        → { units: [...], strikes: { "<owner>": 0-3 } }
 users/{uid}/gamification/stats    → { totalXp, dailyGoal, xpByDate, unlockedBadges, counters }

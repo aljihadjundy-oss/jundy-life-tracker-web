@@ -140,8 +140,21 @@ export type HealthSettings = {
   bodyModeSet: boolean;
   /** First day of the most recent period. */
   cycleStart: string;
+  /**
+   * Manually-chosen fallback used until enough real periods have been
+   * logged (see periodStartHistory) — once there are, the app predicts off
+   * the actual average instead of this guess. Kept editable so a first-time
+   * user still gets a sane prediction before any real data exists.
+   */
   cycleLength: number;
   periodLength: number;
+  /**
+   * Every previous cycleStart, oldest first, pushed here right before it
+   * gets overwritten by the next "Haid mulai hari ini" tap — this is the
+   * real history the length prediction learns from. Capped so it doesn't
+   * grow forever.
+   */
+  periodStartHistory: string[];
   /** Estimated due date, used in pregnancy mode. */
   dueDate: string;
   /** Glasses per day before any mode adjustment. */
@@ -221,6 +234,7 @@ export const DEFAULT_HEALTH_SETTINGS: HealthSettings = {
   cycleStart: "",
   cycleLength: 28,
   periodLength: 5,
+  periodStartHistory: [],
   dueDate: "",
   waterTarget: 8,
   meals: [

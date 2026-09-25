@@ -11,6 +11,7 @@ import {
   type HealthSettings,
 } from "@/types/kesehatan";
 import { todayISO } from "@/lib/format";
+import { learnedCycleLength } from "@/lib/cycle";
 import { useT } from "@/lib/i18n";
 
 const FREQUENCIES: ExercisePrefs["frequency"][] = ["low", "mid", "high"];
@@ -30,6 +31,7 @@ export default function HealthSettingsSheet({
   const [draft, setDraft] = useState<HealthSettings>(settings);
   const [saving, setSaving] = useState(false);
 
+  const learnedLength = learnedCycleLength(draft);
   const set = (patch: Partial<HealthSettings>) => setDraft((prev) => ({ ...prev, ...patch }));
   const setPrefs = (patch: Partial<ExercisePrefs>) =>
     setDraft((prev) => ({ ...prev, exercisePrefs: { ...prev.exercisePrefs, ...patch } }));
@@ -83,6 +85,11 @@ export default function HealthSettingsSheet({
               label={(n) => String(n)}
               onSelect={(n) => set({ cycleLength: n })}
             />
+            <p className="mt-1.5 text-[11px] text-ink-muted">
+              {learnedLength !== null
+                ? t("health.cycleLengthLearned", { n: learnedLength })
+                : t("health.cycleLengthGuess")}
+            </p>
 
             <p className="mb-1.5 mt-3 text-xs font-medium text-ink-muted">{t("health.periodLength")}</p>
             <Chips
