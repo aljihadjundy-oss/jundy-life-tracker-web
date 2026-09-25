@@ -1,6 +1,6 @@
 "use client";
 
-import type { Account, Debt, GoalPriority } from "@/types/finance";
+import { categoryLabel, type Account, type Debt, type GoalPriority } from "@/types/finance";
 import type { BudgetLine, GoalProgress } from "@/lib/money";
 import { formatCurrency, formatDate, formatMonth, todayISO } from "@/lib/format";
 import { useT } from "@/lib/i18n";
@@ -135,7 +135,7 @@ export function BudgetCard({
     <Row id={budget.id} ring="ring-accent-finance" {...row}>
       <div className="flex items-baseline justify-between gap-2">
         <p className="min-w-0 truncate text-sm font-semibold text-ink">
-          {t(`category.${budget.category}`)}
+          {categoryLabel(budget.category, t)}
         </p>
         <span className={`shrink-0 text-[11px] font-bold ${BUDGET_TEXT[status]}`}>
           {t(`money.budgetStatus.${status}`)}
@@ -175,9 +175,12 @@ const DEBT_TEXT: Record<string, string> = {
 
 export function DebtCard({
   debt,
+  onPay,
   ...row
 }: {
   debt: Debt;
+  /** Omitted while selection mode is active, or once the debt is paid off. */
+  onPay?: () => void;
   selectMode: boolean;
   selected: boolean;
   onToggleSelect: (id: string) => void;
@@ -189,40 +192,50 @@ export function DebtCard({
   const overdue = debt.status === "active" && debt.dueDate !== "" && debt.dueDate < todayISO();
 
   return (
-    <Row id={debt.id} ring="ring-red-500" {...row}>
-      <div className="flex items-baseline justify-between gap-2">
-        <p className="min-w-0 truncate text-sm font-semibold text-ink">{debt.name}</p>
-        <span
-          className={`shrink-0 text-[11px] font-bold ${
-            overdue ? "text-red-500" : DEBT_TEXT[debt.status]
-          }`}
+    <div className="flex flex-col gap-1.5">
+      <Row id={debt.id} ring="ring-red-500" {...row}>
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="min-w-0 truncate text-sm font-semibold text-ink">{debt.name}</p>
+          <span
+            className={`shrink-0 text-[11px] font-bold ${
+              overdue ? "text-red-500" : DEBT_TEXT[debt.status]
+            }`}
+          >
+            {overdue ? t("money.debtStatus.late") : t(`money.debtStatus.${debt.status}`)}
+          </span>
+        </div>
+
+        <p className="mt-0.5 truncate text-[11px] text-ink-muted">
+          {debt.creditor || t("money.noCreditor")}
+          {debt.installment > 0
+            ? ` · ${t("money.perMonth", { amount: formatCurrency(debt.installment) })}`
+            : ""}
+          {debt.dueDate ? ` · ${formatDate(debt.dueDate)}` : ""}
+        </p>
+
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-raised">
+          <div
+            className="h-full rounded-full bg-accent-finance transition-all"
+            style={{ width: `${Math.max(0, Math.min(paid, 1)) * 100}%` }}
+          />
+        </div>
+
+        <div className="mt-1.5 flex items-baseline justify-between gap-2 text-[11px] tabular-nums">
+          <span className="text-ink-muted">
+            {t("money.ofPrincipal", { amount: formatCurrency(debt.principal) })}
+          </span>
+          <span className="font-bold text-ink">{formatCurrency(debt.remaining)}</span>
+        </div>
+      </Row>
+      {!row.selectMode && onPay && debt.remaining > 0 && (
+        <button
+          onClick={onPay}
+          className="self-end rounded-full bg-surface-raised px-3 py-1.5 text-[11px] font-bold text-ink-muted transition active:scale-95"
         >
-          {overdue ? t("money.debtStatus.late") : t(`money.debtStatus.${debt.status}`)}
-        </span>
-      </div>
-
-      <p className="mt-0.5 truncate text-[11px] text-ink-muted">
-        {debt.creditor || t("money.noCreditor")}
-        {debt.installment > 0
-          ? ` · ${t("money.perMonth", { amount: formatCurrency(debt.installment) })}`
-          : ""}
-        {debt.dueDate ? ` · ${formatDate(debt.dueDate)}` : ""}
-      </p>
-
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-raised">
-        <div
-          className="h-full rounded-full bg-accent-finance transition-all"
-          style={{ width: `${Math.max(0, Math.min(paid, 1)) * 100}%` }}
-        />
-      </div>
-
-      <div className="mt-1.5 flex items-baseline justify-between gap-2 text-[11px] tabular-nums">
-        <span className="text-ink-muted">
-          {t("money.ofPrincipal", { amount: formatCurrency(debt.principal) })}
-        </span>
-        <span className="font-bold text-ink">{formatCurrency(debt.remaining)}</span>
-      </div>
-    </Row>
+          + {t("money.payInstallment")}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -241,9 +254,12 @@ const GOAL_EMOJI: Record<string, string> = {
 
 export function GoalCard({
   progress,
+  onContribute,
   ...row
 }: {
   progress: GoalProgress;
+  /** Omitted while selection mode is active, or when there's nothing to log against. */
+  onContribute?: () => void;
   selectMode: boolean;
   selected: boolean;
   onToggleSelect: (id: string) => void;
@@ -254,35 +270,45 @@ export function GoalCard({
   const { goal, ratio, remaining } = progress;
 
   return (
-    <Row id={goal.id} ring="ring-brand-start" {...row}>
-      <div className="flex items-center gap-2">
-        <span className="text-base">{GOAL_EMOJI[goal.type] ?? "🎯"}</span>
-        <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{goal.name}</p>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${PRIORITY_TONE[goal.priority]}`}>
-          {t(`money.priority.${goal.priority}`)}
-        </span>
-      </div>
+    <div className="flex flex-col gap-1.5">
+      <Row id={goal.id} ring="ring-brand-start" {...row}>
+        <div className="flex items-center gap-2">
+          <span className="text-base">{GOAL_EMOJI[goal.type] ?? "🎯"}</span>
+          <p className="min-w-0 flex-1 truncate text-sm font-semibold text-ink">{goal.name}</p>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold ${PRIORITY_TONE[goal.priority]}`}>
+            {t(`money.priority.${goal.priority}`)}
+          </span>
+        </div>
 
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-raised">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-brand-start to-brand-mid transition-all"
-          style={{ width: `${ratio * 100}%` }}
-        />
-      </div>
+        <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-raised">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-brand-start to-brand-mid transition-all"
+            style={{ width: `${ratio * 100}%` }}
+          />
+        </div>
 
-      <div className="mt-1.5 flex items-baseline justify-between gap-2 text-[11px] tabular-nums">
-        <span className="text-ink-muted">
-          {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
-        </span>
-        <span className="font-bold text-ink">{Math.round(ratio * 100)}%</span>
-      </div>
+        <div className="mt-1.5 flex items-baseline justify-between gap-2 text-[11px] tabular-nums">
+          <span className="text-ink-muted">
+            {formatCurrency(goal.currentAmount)} / {formatCurrency(goal.targetAmount)}
+          </span>
+          <span className="font-bold text-ink">{Math.round(ratio * 100)}%</span>
+        </div>
 
-      <p className="mt-1 text-[11px] text-ink-muted">
-        {remaining > 0
-          ? t("money.goalRemaining", { amount: formatCurrency(remaining) })
-          : t("money.goalReached")}
-        {goal.deadline ? ` · ${formatDate(goal.deadline)}` : ""}
-      </p>
-    </Row>
+        <p className="mt-1 text-[11px] text-ink-muted">
+          {remaining > 0
+            ? t("money.goalRemaining", { amount: formatCurrency(remaining) })
+            : t("money.goalReached")}
+          {goal.deadline ? ` · ${formatDate(goal.deadline)}` : ""}
+        </p>
+      </Row>
+      {!row.selectMode && onContribute && remaining > 0 && (
+        <button
+          onClick={onContribute}
+          className="self-end rounded-full bg-surface-raised px-3 py-1.5 text-[11px] font-bold text-ink-muted transition active:scale-95"
+        >
+          + {t("money.contribute")}
+        </button>
+      )}
+    </div>
   );
 }

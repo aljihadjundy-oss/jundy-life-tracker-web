@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { EXPENSE_CATEGORIES, type Budget, type NewBudget } from "@/types/finance";
+import { EXPENSE_CATEGORIES, categoryLabel, type Budget, type NewBudget } from "@/types/finance";
 import { currentMonthKey, formatMonth, addMonths } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import Sheet, { AmountInput, Field, inputClass } from "./Sheet";
@@ -16,6 +16,7 @@ export default function BudgetForm({
   initial,
   defaultMonth,
   takenCategories,
+  customCategories,
   onSubmit,
   onDelete,
   onClose,
@@ -24,6 +25,7 @@ export default function BudgetForm({
   defaultMonth: string;
   /** Categories that already have a budget this month — one row each. */
   takenCategories: string[];
+  customCategories: string[];
   onSubmit: (data: NewBudget) => void | Promise<void>;
   onDelete?: (id: string) => void | Promise<void>;
   onClose: () => void;
@@ -34,7 +36,7 @@ export default function BudgetForm({
   const [planned, setPlanned] = useState(initial ? String(initial.planned) : "");
   const [submitting, setSubmitting] = useState(false);
 
-  const available = EXPENSE_CATEGORIES.filter(
+  const available = [...EXPENSE_CATEGORIES, ...customCategories].filter(
     (c) => c === initial?.category || !takenCategories.includes(c)
   );
 
@@ -90,7 +92,7 @@ export default function BudgetForm({
                 category === option ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
               }`}
             >
-              {t(`category.${option}`)}
+              {categoryLabel(option, t)}
             </button>
           ))}
         </div>

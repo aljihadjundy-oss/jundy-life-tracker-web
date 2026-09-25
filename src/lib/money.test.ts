@@ -7,6 +7,7 @@ import {
   allocationTotal,
   budgetLine,
   goalProgress,
+  isDuplicateTransaction,
   monthSummary,
   monthlyInstallments,
   needWantSplit,
@@ -33,6 +34,9 @@ function tx(patch: Partial<Transaction> = {}): Transaction {
     needWant: "",
     fixed: false,
     status: "done",
+    goalId: "",
+    debtId: "",
+    recurringId: "",
     createdAt: 0,
     ...patch,
   };
@@ -302,4 +306,43 @@ test("allocationLines membagi basis menurut persen", () => {
 
 test("allocationTotal menjumlahkan persen, untuk menandai rencana yang tidak 100%", () => {
   assert.equal(allocationTotal([{ percent: 50 }, { percent: 30 }] as never), 80);
+});
+
+// ---------------------------------------------------------------------------
+// isDuplicateTransaction — dedup saat import CSV
+// ---------------------------------------------------------------------------
+
+test("isDuplicateTransaction: cocok tanggal+jumlah+tipe+rekening dianggap duplikat", () => {
+  const existing = [tx({ date: "2026-09-11", amount: 50_000, type: "expense", accountId: "a1" })];
+  assert.equal(
+    isDuplicateTransaction({ date: "2026-09-11", amount: 50_000, type: "expense", accountId: "a1" }, existing),
+    true
+  );
+});
+
+test("isDuplicateTransaction: beda salah satu field bukan duplikat", () => {
+  const existing = [tx({ date: "2026-09-11", amount: 50_000, type: "expense", accountId: "a1" })];
+  assert.equal(
+    isDuplicateTransaction({ date: "2026-09-12", amount: 50_000, type: "expense", accountId: "a1" }, existing),
+    false
+  );
+  assert.equal(
+    isDuplicateTransaction({ date: "2026-09-11", amount: 60_000, type: "expense", accountId: "a1" }, existing),
+    false
+  );
+  assert.equal(
+    isDuplicateTransaction({ date: "2026-09-11", amount: 50_000, type: "income", accountId: "a1" }, existing),
+    false
+  );
+  assert.equal(
+    isDuplicateTransaction({ date: "2026-09-11", amount: 50_000, type: "expense", accountId: "a2" }, existing),
+    false
+  );
+});
+
+test("isDuplicateTransaction: daftar existing kosong tidak pernah duplikat", () => {
+  assert.equal(
+    isDuplicateTransaction({ date: "2026-09-11", amount: 50_000, type: "expense", accountId: "a1" }, []),
+    false
+  );
 });

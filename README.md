@@ -119,14 +119,26 @@ firestore.rules           # data di-lock per uid (users/{uid}/...)
 ```
 users/{uid}/transactions/{id}     → { type (income|expense|transfer), amount, category, note,
                                       date, accountId, toAccountId, needWant, fixed, status,
-                                      createdAt }
+                                      goalId, debtId, recurringId, createdAt }
+                                    (goalId/debtId/recurringId link a row back to what it came
+                                     from — a goal deposit, a debt installment, or a one-tap log
+                                     from a recurring template — "" when it's an ordinary manual
+                                     transaction. fixed is just a display tag, not automation.)
 users/{uid}/accounts/{id}         → { name, type, openingBalance, asOf, note, createdAt }
 users/{uid}/budgets/{id}          → { month, category, planned, createdAt }
 users/{uid}/debts/{id}            → { name, creditor, principal, remaining, installment,
                                       dueDate, interest, note, status, createdAt }
 users/{uid}/goals/{id}            → { name, targetAmount, currentAmount, deadline, priority,
                                       type, createdAt }
-users/{uid}/settings/finance      → { monthlyBudget, allocationBase, allocations: [...] }
+users/{uid}/recurringTransactions/{id} → { name, type (income|expense), amount, category,
+                                      accountId, createdAt }
+                                    (template buat "Rutin" di tab Transaksi — dicatat lagi tiap
+                                     bulan dengan satu tap lewat logRecurringTransaction, bukan
+                                     otomatis nulis transaksi baru sendiri)
+users/{uid}/settings/finance      → { monthlyBudget, allocationBase, allocations: [...],
+                                      customCategories: [...] }
+                                    (customCategories = kategori expense yang diketik user
+                                     sendiri di luar EXPENSE_CATEGORIES bawaan)
 users/{uid}/tasks/{id}            → { title, note, dueDate, startTime, durationMinutes,
                                       reminderMinutes, status, category, owner, unit, link,
                                       source, createdAt, completedAt, notifiedFor }

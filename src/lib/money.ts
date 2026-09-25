@@ -236,3 +236,28 @@ export function needWantSplit(transactions: Transaction[], month: string) {
 export function unassignedTransactions(transactions: Transaction[]) {
   return transactions.filter((tx) => tx.accountId === "");
 }
+
+// ---------------------------------------------------------------------------
+// Import duplicate detection
+// ---------------------------------------------------------------------------
+
+/**
+ * True when `existing` already has a row that looks like the same real-world
+ * transaction — same day, same account, same direction, same amount. CSV
+ * exports overlap on re-import (a fresh "this month" statement usually
+ * covers days already imported earlier), and importing the same row twice
+ * silently doubles it in every total. Note isn't compared: banks sometimes
+ * reformat a description between exports of the same period.
+ */
+export function isDuplicateTransaction(
+  candidate: Pick<Transaction, "date" | "amount" | "type" | "accountId">,
+  existing: Transaction[]
+) {
+  return existing.some(
+    (tx) =>
+      tx.date === candidate.date &&
+      tx.amount === candidate.amount &&
+      tx.type === candidate.type &&
+      tx.accountId === candidate.accountId
+  );
+}

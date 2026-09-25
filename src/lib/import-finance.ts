@@ -1,5 +1,6 @@
 import { toISODate } from "./format";
-import type { NewTransaction } from "@/types/finance";
+import { isDuplicateTransaction } from "./money";
+import type { NewTransaction, Transaction } from "@/types/finance";
 
 export type ColumnMapping = {
   date: number;
@@ -95,14 +96,16 @@ export function parseDate(raw: string): string {
   return Number.isNaN(parsed.getTime()) ? "" : toISODate(parsed);
 }
 
-export type ParsedRow = NewTransaction & { valid: boolean };
+export type ParsedRow = NewTransaction & { valid: boolean; duplicate: boolean };
 
 export function buildTransactions(
   rows: string[][],
   mapping: ColumnMapping,
   category: string,
   /** Statements come from one account, so every row lands in that account. */
-  accountId = ""
+  accountId = "",
+  /** Already-imported transactions, to flag rows that look like re-imports. */
+  existing: Transaction[] = []
 ): ParsedRow[] {
   return rows.map((row) => {
     const date = parseDate(row[mapping.date] ?? "");
@@ -127,6 +130,9 @@ export function buildTransactions(
       }
     }
 
+    const duplicate =
+      Boolean(date) && amount > 0 && isDuplicateTransaction({ date, amount, type, accountId }, existing);
+
     return {
       date,
       note,
@@ -138,7 +144,11 @@ export function buildTransactions(
       needWant: "",
       fixed: false,
       status: "done",
-      valid: Boolean(date) && amount > 0,
+      goalId: "",
+      debtId: "",
+      recurringId: "",
+      valid: Boolean(date) && amount > 0 && !duplicate,
+      duplicate,
     };
   });
 }

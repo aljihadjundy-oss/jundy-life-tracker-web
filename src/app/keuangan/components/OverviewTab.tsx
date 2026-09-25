@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import type { Account, Debt, FinanceSettings, Goal, Transaction, Budget } from "@/types/finance";
+import { categoryLabel, type Account, type Debt, type FinanceSettings, type Goal, type Transaction, type Budget } from "@/types/finance";
 import {
   allocationLines,
   allocationTotal,
@@ -114,7 +114,7 @@ export default function OverviewTab({
                   {t("money.budgetStatus.over")}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-xs text-ink">
-                  {t(`category.${line.budget.category}`)}
+                  {categoryLabel(line.budget.category, t)}
                 </span>
                 <span className="shrink-0 text-[11px] font-bold tabular-nums text-red-500">
                   {formatCurrency(-line.remaining)}
@@ -136,7 +136,7 @@ export default function OverviewTab({
                 className="flex items-center gap-2 border-b border-border/60 py-2 last:border-none"
               >
                 <span className="min-w-0 flex-1 truncate text-xs text-ink">
-                  {tx.note || t(`category.${tx.category}`)}
+                  {tx.note || categoryLabel(tx.category, t)}
                 </span>
                 <span className="shrink-0 text-[10px] text-ink-muted">{formatDate(tx.date)}</span>
                 <span
@@ -164,7 +164,7 @@ export default function OverviewTab({
               <div key={entry.category}>
                 <div className="mb-1 flex items-baseline justify-between gap-2 text-[11px]">
                   <span className="min-w-0 truncate font-semibold text-ink">
-                    {t(`category.${entry.category}`)}
+                    {categoryLabel(entry.category, t)}
                   </span>
                   <span className="shrink-0 tabular-nums text-ink-muted">
                     {formatCurrency(entry.amount)}

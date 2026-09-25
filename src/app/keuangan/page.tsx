@@ -9,22 +9,28 @@ import {
   addBudget,
   addDebt,
   addGoal,
+  addRecurringTransaction,
   addTransaction,
   addTransactionsBatch,
   updateTransaction,
+  contributeToGoal,
   copyBudgets,
   deleteAccounts,
   deleteBudgets,
   deleteDebts,
   deleteGoals,
+  deleteRecurringTransaction,
   deleteTransaction,
   deleteTransactions,
+  logRecurringTransaction,
+  payDebtInstallment,
   saveFinanceSettings,
   subscribeAccounts,
   subscribeBudgets,
   subscribeDebts,
   subscribeFinanceSettings,
   subscribeGoals,
+  subscribeRecurringTransactions,
   subscribeTransactions,
   updateAccount,
   updateBudget,
@@ -42,11 +48,13 @@ import {
   type NewBudget,
   type NewDebt,
   type NewGoal,
+  type NewRecurringTransaction,
   type NewTransaction,
+  type RecurringTransaction,
   type Transaction,
 } from "@/types/finance";
 import { accountBalance, budgetLines, goalsByProgress, unassignedTransactions } from "@/lib/money";
-import { addMonths, currentMonthKey, formatMonth } from "@/lib/format";
+import { addMonths, currentMonthKey, formatMonth, todayISO } from "@/lib/format";
 import TransactionCard from "./components/TransactionCard";
 import TransactionForm from "./components/TransactionForm";
 import ImportSheet from "./components/ImportSheet";
@@ -56,6 +64,9 @@ import BudgetForm from "./components/BudgetForm";
 import DebtForm from "./components/DebtForm";
 import GoalForm from "./components/GoalForm";
 import AllocationSheet from "./components/AllocationSheet";
+import ContributionSheet from "./components/ContributionSheet";
+import RecurringSection from "./components/RecurringSection";
+import RecurringTransactionForm from "./components/RecurringTransactionForm";
 import { AccountCard, BudgetCard, DebtCard, GoalCard } from "./components/MoneyCards";
 import { useT } from "@/lib/i18n";
 import SelectionBar from "@/components/SelectionBar";
@@ -75,6 +86,9 @@ type Editing =
   | { kind: "goal"; item: Goal | null }
   | { kind: "import" }
   | { kind: "allocation" }
+  | { kind: "recurringForm" }
+  | { kind: "goalContribute"; item: Goal }
+  | { kind: "debtPay"; item: Debt }
   | null;
 
 export default function KeuanganPage() {
@@ -93,6 +107,7 @@ function KeuanganContent() {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [debts, setDebts] = useState<Debt[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
   const [settings, setSettings] = useState<FinanceSettings>(DEFAULT_FINANCE_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("overview");
@@ -111,6 +126,7 @@ function KeuanganContent() {
       subscribeBudgets(user.uid, setBudgets),
       subscribeDebts(user.uid, setDebts),
       subscribeGoals(user.uid, setGoals),
+      subscribeRecurringTransactions(user.uid, setRecurring),
       subscribeFinanceSettings(user.uid, setSettings),
     ];
     return () => unsubs.forEach((unsub) => unsub());
@@ -160,6 +176,33 @@ function KeuanganContent() {
       return;
     }
     reportFailure(addTransaction(uid, data), t("notify.saveFailed"));
+    awardXpInBackground(uid, "transaction");
+  }
+
+  function handleAddCategory(name: string) {
+    if (!uid) return;
+    if (settings.customCategories.includes(name)) return;
+    save((u) => saveFinanceSettings(u, { customCategories: [...settings.customCategories, name] }));
+  }
+
+  function handleContributeGoal(goal: Goal, amount: number, accountId: string) {
+    if (!uid) return;
+    reportFailure(contributeToGoal(uid, goal, amount, accountId, todayISO()), t("notify.saveFailed"));
+  }
+
+  function handlePayDebt(debt: Debt, amount: number, accountId: string) {
+    if (!uid) return;
+    reportFailure(payDebtInstallment(uid, debt, amount, accountId, todayISO()), t("notify.saveFailed"));
+  }
+
+  function handleAddRecurring(data: NewRecurringTransaction) {
+    if (!uid) return;
+    reportFailure(addRecurringTransaction(uid, data), t("notify.saveFailed"));
+  }
+
+  function handleLogRecurring(item: RecurringTransaction) {
+    if (!uid) return;
+    reportFailure(logRecurringTransaction(uid, item, todayISO()), t("notify.saveFailed"));
     awardXpInBackground(uid, "transaction");
   }
 
@@ -298,6 +341,16 @@ function KeuanganContent() {
           />
 
           <div className="mt-3 flex flex-col gap-2.5 px-5 pb-24">
+            {tab === "transactions" && (
+              <RecurringSection
+                items={recurring}
+                transactions={transactions}
+                onLog={handleLogRecurring}
+                onDelete={(id) => save((u) => deleteRecurringTransaction(u, id))}
+                onAdd={() => setEditing({ kind: "recurringForm" })}
+              />
+            )}
+
             {tab === "transactions" &&
               (transactions.length === 0 ? (
                 <EmptyState>{t("finance.empty")}</EmptyState>
@@ -366,6 +419,7 @@ function KeuanganContent() {
                     key={debt.id}
                     debt={debt}
                     onOpen={() => setEditing({ kind: "debt", item: debt })}
+                    onPay={() => setEditing({ kind: "debtPay", item: debt })}
                     {...rowProps(debt.id)}
                   />
                 ))
@@ -380,6 +434,7 @@ function KeuanganContent() {
                     key={progress.goal.id}
                     progress={progress}
                     onOpen={() => setEditing({ kind: "goal", item: progress.goal })}
+                    onContribute={() => setEditing({ kind: "goalContribute", item: progress.goal })}
                     {...rowProps(progress.goal.id)}
                   />
                 ))
@@ -394,6 +449,8 @@ function KeuanganContent() {
         <TransactionForm
           initial={editing.item}
           accounts={accounts}
+          customCategories={settings.customCategories}
+          onAddCategory={handleAddCategory}
           onSubmit={handleAddTransaction}
           onDelete={(id) => save((u) => deleteTransaction(u, id))}
           onClose={() => setEditing(null)}
@@ -414,6 +471,7 @@ function KeuanganContent() {
           initial={editing.item}
           defaultMonth={month}
           takenCategories={monthBudgets.map((b) => b.category)}
+          customCategories={settings.customCategories}
           onSubmit={(data: NewBudget) =>
             save((u) => (editing.item ? updateBudget(u, editing.item.id, data) : addBudget(u, data)))
           }
@@ -444,6 +502,8 @@ function KeuanganContent() {
       {editing?.kind === "import" && (
         <ImportSheet
           accounts={accounts}
+          existing={transactions}
+          customCategories={settings.customCategories}
           onImport={(items) => save((u) => addTransactionsBatch(u, items))}
           onClose={() => setEditing(null)}
         />
@@ -452,6 +512,32 @@ function KeuanganContent() {
         <AllocationSheet
           settings={settings}
           onSubmit={(patch) => save((u) => saveFinanceSettings(u, patch))}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {editing?.kind === "recurringForm" && (
+        <RecurringTransactionForm
+          accounts={accounts}
+          customCategories={settings.customCategories}
+          onSubmit={handleAddRecurring}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {editing?.kind === "goalContribute" && (
+        <ContributionSheet
+          title={t("money.contribute")}
+          hint={t("money.contributeHint", { name: editing.item.name })}
+          accounts={accounts}
+          onSubmit={(amount, accountId) => handleContributeGoal(editing.item, amount, accountId)}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {editing?.kind === "debtPay" && (
+        <ContributionSheet
+          title={t("money.payInstallment")}
+          hint={t("money.payInstallmentHint", { name: editing.item.name })}
+          accounts={accounts}
+          onSubmit={(amount, accountId) => handlePayDebt(editing.item, amount, accountId)}
           onClose={() => setEditing(null)}
         />
       )}

@@ -19,9 +19,17 @@ export type Transaction = {
   /** Destination account — transfers only. */
   toAccountId: string;
   needWant: NeedWant;
-  /** A recurring commitment rather than a one-off. */
+  /** A recurring commitment rather than a one-off. Set by hand, or true when
+   * logged from a RecurringTransaction template — either way it is just a
+   * display tag; nothing regenerates this row automatically next month. */
   fixed: boolean;
   status: TransactionStatus;
+  /** Set when this row is a contribution logged from GoalCard — "" otherwise. */
+  goalId: string;
+  /** Set when this row is an installment logged from DebtCard — "" otherwise. */
+  debtId: string;
+  /** Set when this row was one-tap logged from a RecurringTransaction template. */
+  recurringId: string;
   createdAt: number; // epoch millis
 };
 
@@ -41,6 +49,7 @@ export const EXPENSE_CATEGORIES = [
   "Kesehatan",
   "Pendidikan",
   "Hutang",
+  "Tabungan",
   "Rokok",
   "Lainnya",
 ] as const;
@@ -60,6 +69,19 @@ export function categoriesFor(type: TransactionType): readonly string[] {
   if (type === "income") return INCOME_CATEGORIES;
   if (type === "transfer") return [TRANSFER_CATEGORY];
   return EXPENSE_CATEGORIES;
+}
+
+/** Every category with a real `category.<name>` translation — a custom
+ * category typed in by a user isn't in here, so it renders as-is instead of
+ * through t(), which would otherwise show the raw, untranslated key. */
+const KNOWN_CATEGORIES = new Set<string>([
+  ...EXPENSE_CATEGORIES,
+  ...INCOME_CATEGORIES,
+  TRANSFER_CATEGORY,
+]);
+
+export function categoryLabel(category: string, t: (key: string) => string): string {
+  return KNOWN_CATEGORIES.has(category) ? t(`category.${category}`) : category;
 }
 
 // ---------------------------------------------------------------------------
@@ -175,6 +197,13 @@ export type FinanceSettings = {
   /** Monthly take-home the percentages are applied to. */
   allocationBase: number;
   allocations: Allocation[];
+  /**
+   * Expense categories the user typed in themselves, beyond the fixed
+   * EXPENSE_CATEGORIES list — that list is the app's canonical Firestore
+   * keys, so this stays a separate, freely-editable add-on instead of
+   * changing what those keys mean.
+   */
+  customCategories: string[];
 };
 
 /** The template's own split, used until the user edits it. */
@@ -190,4 +219,24 @@ export const DEFAULT_FINANCE_SETTINGS: FinanceSettings = {
   monthlyBudget: 0,
   allocationBase: 0,
   allocations: DEFAULT_ALLOCATIONS,
+  customCategories: [],
 };
+
+// ---------------------------------------------------------------------------
+// Recurring transaction templates — the thing "fixed" on a Transaction used
+// to promise but never did: a saved bill/income you can log again with one
+// tap each month instead of re-typing it from scratch.
+// ---------------------------------------------------------------------------
+
+export type RecurringTransaction = {
+  id: string;
+  name: string;
+  type: "income" | "expense";
+  amount: number;
+  category: string;
+  /** "" = not tied to a specific account. */
+  accountId: string;
+  createdAt: number;
+};
+
+export type NewRecurringTransaction = Omit<RecurringTransaction, "id" | "createdAt">;

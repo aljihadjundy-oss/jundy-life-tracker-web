@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Transaction } from "@/types/finance";
+import { categoryLabel, type Transaction } from "@/types/finance";
 import { formatCurrency } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 import SelectCheckbox from "@/components/SelectCheckbox";
@@ -75,7 +75,7 @@ export default function TransactionCard({
         className="min-w-0 flex-1 text-left"
       >
         <p className="truncate text-sm font-semibold text-ink">
-          {t(`category.${transaction.category}`)}
+          {categoryLabel(transaction.category, t)}
         </p>
         <p className="truncate text-xs text-ink-muted">
           {transaction.note || t("finance.noNote")}

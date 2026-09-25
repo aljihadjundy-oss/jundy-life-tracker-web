@@ -20,6 +20,7 @@ const COLLECTIONS = [
   "budgets",
   "debts",
   "goals",
+  "recurringTransactions",
   "tasks",
   "content",
   "habits",

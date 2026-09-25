@@ -8,8 +8,8 @@ import {
   guessMapping,
   type ColumnMapping,
 } from "@/lib/import-finance";
-import { EXPENSE_CATEGORIES } from "@/types/finance";
-import type { NewTransaction } from "@/types/finance";
+import { EXPENSE_CATEGORIES, categoryLabel } from "@/types/finance";
+import type { NewTransaction, Transaction } from "@/types/finance";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { useT } from "@/lib/i18n";
 
@@ -18,11 +18,16 @@ const FIELDS: Field[] = ["date", "description", "amount", "debit", "credit"];
 
 export default function ImportSheet({
   accounts,
+  existing,
+  customCategories,
   onImport,
   onClose,
 }: {
   /** A statement belongs to one account; every imported row lands there. */
   accounts: { id: string; name: string }[];
+  /** Already-imported transactions, to flag rows that look like re-imports. */
+  existing: Transaction[];
+  customCategories: string[];
   onImport: (transactions: NewTransaction[]) => void | Promise<void>;
   onClose: () => void;
 }) {
@@ -57,18 +62,20 @@ export default function ImportSheet({
   );
 
   const parsed = useMemo(
-    () => (mapping ? buildTransactions(dataRows, mapping, category, accountId) : []),
-    [dataRows, mapping, category, accountId]
+    () => (mapping ? buildTransactions(dataRows, mapping, category, accountId, existing) : []),
+    [dataRows, mapping, category, accountId, existing]
   );
   const valid = parsed.filter((row) => row.valid);
+  const duplicates = parsed.filter((row) => row.duplicate);
 
   async function handleImport() {
     if (valid.length === 0) return;
     setImporting(true);
     try {
       await onImport(valid.map((row) => {
-          const { valid: _ignored, ...rest } = row;
+          const { valid: _ignored, duplicate: _ignoredDup, ...rest } = row;
           void _ignored;
+          void _ignoredDup;
           return rest;
         }));
       onClose();
@@ -154,7 +161,7 @@ export default function ImportSheet({
 
             <h3 className="mb-2 text-xs font-bold text-ink">{t("import.category")}</h3>
             <div className="mb-4 flex flex-wrap gap-2">
-              {EXPENSE_CATEGORIES.map((c) => (
+              {[...EXPENSE_CATEGORIES, ...customCategories].map((c) => (
                 <button
                   key={c}
                   onClick={() => setCategory(c)}
@@ -162,7 +169,7 @@ export default function ImportSheet({
                     category === c ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
                   }`}
                 >
-                  {t(`category.${c}`)}
+                  {categoryLabel(c, t)}
                 </button>
               ))}
             </div>
@@ -188,6 +195,11 @@ export default function ImportSheet({
             <h3 className="mb-2 text-xs font-bold text-ink">
               {t("import.preview", { valid: valid.length, total: parsed.length })}
             </h3>
+            {duplicates.length > 0 && (
+              <p className="mb-2 rounded-xl bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-600 dark:text-amber-400">
+                {t("import.duplicatesSkipped", { count: duplicates.length })}
+              </p>
+            )}
             <div className="flex flex-col gap-1.5">
               {parsed.slice(0, 8).map((row, idx) => (
                 <div
@@ -199,7 +211,14 @@ export default function ImportSheet({
                   <span className="w-20 shrink-0 text-ink-muted">
                     {row.date ? formatDate(row.date) : "—"}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-ink">{row.note || "—"}</span>
+                  <span className="min-w-0 flex-1 truncate text-ink">
+                    {row.note || "—"}
+                    {row.duplicate && (
+                      <span className="ml-1.5 text-amber-600 dark:text-amber-400">
+                        · {t("import.duplicate")}
+                      </span>
+                    )}
+                  </span>
                   <span
                     className={`shrink-0 font-bold ${
                       row.type === "income" ? "text-accent-finance" : "text-ink"

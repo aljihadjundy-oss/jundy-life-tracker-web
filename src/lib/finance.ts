@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  limit,
   onSnapshot,
   orderBy,
   query,
@@ -25,7 +26,9 @@ import {
   type NewBudget,
   type NewDebt,
   type NewGoal,
+  type NewRecurringTransaction,
   type NewTransaction,
+  type RecurringTransaction,
   type Transaction,
 } from "@/types/finance";
 
@@ -37,11 +40,24 @@ function financeSettingsRef(uid: string) {
   return doc(db, "users", uid, "settings", "finance");
 }
 
+// A generous soft cap, not a real fix for unbounded growth: accountBalance
+// sums every transaction since an account's asOf date, so silently dropping
+// old rows here would make balances quietly wrong rather than just slow.
+// 5000 rows is years of daily use for one person — comfortably above what
+// this cap should ever bind on, while still protecting against a truly
+// runaway read if it somehow did.
+const TRANSACTIONS_LIMIT = 5000;
+
 export function subscribeTransactions(
   uid: string,
   onData: (transactions: Transaction[]) => void
 ) {
-  const q = query(transactionsRef(uid), orderBy("date", "desc"), orderBy("createdAt", "desc"));
+  const q = query(
+    transactionsRef(uid),
+    orderBy("date", "desc"),
+    orderBy("createdAt", "desc"),
+    limit(TRANSACTIONS_LIMIT)
+  );
   return onSnapshot(q, (snapshot) => {
     const items = snapshot.docs.map((d) => {
       const data = d.data();
@@ -60,6 +76,9 @@ export function subscribeTransactions(
         needWant: data.needWant ?? "",
         fixed: data.fixed ?? false,
         status: data.status ?? "done",
+        goalId: data.goalId ?? "",
+        debtId: data.debtId ?? "",
+        recurringId: data.recurringId ?? "",
         createdAt,
       } as Transaction;
     });
@@ -106,6 +125,7 @@ export function subscribeFinanceSettings(uid: string, onData: (settings: Finance
       monthlyBudget: data.monthlyBudget ?? 0,
       allocationBase: data.allocationBase ?? 0,
       allocations: data.allocations ?? DEFAULT_FINANCE_SETTINGS.allocations,
+      customCategories: data.customCategories ?? [],
     });
   });
 }
@@ -278,4 +298,138 @@ export async function updateGoal(uid: string, id: string, patch: Partial<NewGoal
 
 export function deleteGoals(uid: string, ids: string[]) {
   return deleteDocsBatch(ids.map((id) => doc(db, "users", uid, "goals", id)));
+}
+
+/**
+ * Logs a real deposit toward a goal: bumps currentAmount AND writes the
+ * matching expense so it shows up in Transactions/net worth like any other
+ * money leaving an account — previously a goal's progress bar was just a
+ * number typed by hand, disconnected from what was actually spent.
+ */
+export async function contributeToGoal(
+  uid: string,
+  goal: Goal,
+  amount: number,
+  accountId: string,
+  date: string
+) {
+  const batch = writeBatch(db);
+  batch.update(doc(db, "users", uid, "goals", goal.id), {
+    currentAmount: goal.currentAmount + amount,
+  });
+  batch.set(doc(transactionsRef(uid)), {
+    type: "expense",
+    amount,
+    category: "Tabungan",
+    note: goal.name,
+    date,
+    accountId,
+    toAccountId: "",
+    needWant: "",
+    fixed: false,
+    status: "done",
+    goalId: goal.id,
+    debtId: "",
+    recurringId: "",
+    createdAt: serverTimestamp(),
+  });
+  await batch.commit();
+}
+
+/**
+ * Logs a real installment payment: reduces remaining AND writes the matching
+ * expense, same reasoning as contributeToGoal. Marks the debt paid once
+ * remaining hits zero instead of leaving it to be closed out by hand.
+ */
+export async function payDebtInstallment(
+  uid: string,
+  debt: Debt,
+  amount: number,
+  accountId: string,
+  date: string
+) {
+  const remaining = Math.max(0, debt.remaining - amount);
+  const batch = writeBatch(db);
+  batch.update(doc(db, "users", uid, "debts", debt.id), {
+    remaining,
+    status: remaining === 0 ? "paid" : debt.status,
+  });
+  batch.set(doc(transactionsRef(uid)), {
+    type: "expense",
+    amount,
+    category: "Hutang",
+    note: debt.name,
+    date,
+    accountId,
+    toAccountId: "",
+    needWant: "need",
+    fixed: false,
+    status: "done",
+    goalId: "",
+    debtId: debt.id,
+    recurringId: "",
+    createdAt: serverTimestamp(),
+  });
+  await batch.commit();
+}
+
+// ---------------------------------------------------------------------------
+// Recurring transaction templates
+// ---------------------------------------------------------------------------
+
+export function subscribeRecurringTransactions(
+  uid: string,
+  onData: (items: RecurringTransaction[]) => void
+) {
+  return onSnapshot(
+    query(collectionRef(uid, "recurringTransactions"), orderBy("createdAt", "asc")),
+    (snap) => {
+      onData(
+        snap.docs.map((d) => {
+          const data = d.data();
+          return {
+            id: d.id,
+            name: data.name ?? "",
+            type: data.type === "income" ? "income" : "expense",
+            amount: data.amount ?? 0,
+            category: data.category ?? "",
+            accountId: data.accountId ?? "",
+            createdAt: millis(data.createdAt),
+          } as RecurringTransaction;
+        })
+      );
+    }
+  );
+}
+
+export async function addRecurringTransaction(uid: string, item: NewRecurringTransaction) {
+  await addDoc(collectionRef(uid, "recurringTransactions"), { ...item, createdAt: serverTimestamp() });
+}
+
+export async function deleteRecurringTransaction(uid: string, id: string) {
+  await deleteDoc(doc(db, "users", uid, "recurringTransactions", id));
+}
+
+/** One-tap log from a recurring template — dated today, tagged fixed. */
+export async function logRecurringTransaction(
+  uid: string,
+  item: RecurringTransaction,
+  date: string
+) {
+  await addDoc(transactionsRef(uid), {
+    type: item.type,
+    amount: item.amount,
+    category: item.category,
+    note: item.name,
+    date,
+    accountId: item.accountId,
+    toAccountId: "",
+    needWant: "",
+    fixed: true,
+    status: "done",
+    goalId: "",
+    debtId: "",
+    recurringId: item.id,
+    createdAt: serverTimestamp(),
+  });
 }

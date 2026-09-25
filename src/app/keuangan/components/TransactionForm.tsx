@@ -5,6 +5,7 @@ import {
   TRANSACTION_TYPES,
   TRANSFER_CATEGORY,
   categoriesFor,
+  categoryLabel,
   type Account,
   type NeedWant,
   type NewTransaction,
@@ -22,12 +23,17 @@ const STATUSES: TransactionStatus[] = ["done", "pending"];
 export default function TransactionForm({
   initial,
   accounts,
+  customCategories,
+  onAddCategory,
   onSubmit,
   onDelete,
   onClose,
 }: {
   initial?: Transaction | null;
   accounts: Account[];
+  /** Expense categories the user typed in beyond the fixed list. */
+  customCategories: string[];
+  onAddCategory: (name: string) => void;
   onSubmit: (data: NewTransaction) => void | Promise<void>;
   onDelete?: (id: string) => void | Promise<void>;
   onClose: () => void;
@@ -44,8 +50,19 @@ export default function TransactionForm({
   const [status, setStatus] = useState<TransactionStatus>(initial?.status ?? "done");
   const [note, setNote] = useState(initial?.note ?? "");
   const [submitting, setSubmitting] = useState(false);
+  const [addingCategory, setAddingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
-  const categories = categoriesFor(type);
+  const categories = type === "expense" ? [...categoriesFor(type), ...customCategories] : categoriesFor(type);
+
+  function confirmNewCategory() {
+    const name = newCategoryName.trim();
+    if (!name) return;
+    if (!categories.includes(name)) onAddCategory(name);
+    setCategory(name);
+    setNewCategoryName("");
+    setAddingCategory(false);
+  }
 
   function changeType(next: TransactionType) {
     setType(next);
@@ -70,6 +87,9 @@ export default function TransactionForm({
         needWant: type === "expense" ? needWant : "",
         fixed,
         status,
+        goalId: initial?.goalId ?? "",
+        debtId: initial?.debtId ?? "",
+        recurringId: initial?.recurringId ?? "",
       });
       onClose();
     } finally {
@@ -132,10 +152,38 @@ export default function TransactionForm({
                   category === option ? "bg-ink text-surface" : "bg-surface-raised text-ink-muted"
                 }`}
               >
-                {t(`category.${option}`)}
+                {categoryLabel(option, t)}
               </button>
             ))}
+            {type === "expense" && !addingCategory && (
+              <button
+                type="button"
+                onClick={() => setAddingCategory(true)}
+                className="rounded-full bg-surface-raised px-3 py-2 text-xs font-semibold text-ink-muted"
+              >
+                + {t("money.newCategory")}
+              </button>
+            )}
           </div>
+          {addingCategory && (
+            <div className="mt-2 flex gap-2">
+              <input
+                type="text"
+                autoFocus
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder={t("money.newCategoryPlaceholder")}
+                className={inputClass}
+              />
+              <button
+                type="button"
+                onClick={confirmNewCategory}
+                className="shrink-0 rounded-xl bg-ink px-4 text-xs font-bold text-surface"
+              >
+                {t("app.add")}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
